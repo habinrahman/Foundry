@@ -162,7 +162,24 @@ Seed `src/data/careers/roles.ts` with these open engineering roles (original des
 | `ai-product-engineer` | AI Product Engineer |
 | `engineering-lead` | Engineering Lead |
 
-All roles appear on `/careers` and support `/careers/[slug]` + `/apply?role=<slug>`. **AI Product Engineer** is the flagship detail page (richest content); other roles get complete, credible detail pages without blocking polish on the flagship.
+### Role catalog shape
+
+```ts
+interface CareerRole {
+  slug: string;
+  title: string;
+  department: string;
+  location: string;
+  employmentType: string;
+  experience: string;
+  summary: string;
+  responsibilities: string[];
+  requirements: string[];
+  featured?: boolean;
+}
+```
+
+Helpers: `CAREERS_ROLES`, `getRoleBySlug(slug)`, `getFeaturedRoles()`. Apply form and job pages consume this module only.
 
 ### `/careers`
 
@@ -174,16 +191,17 @@ Role details: location (e.g. Remote), employment type (Full-time), experience si
 
 ### `/apply`
 
-Premium multi-step form (client component). Role is **pre-selected** when arriving from a job page (`?role=`); still changeable via an elegant select (not a Google Forms dropdown clone).
+Premium multi-step form (client component). Role is **pre-selected** when arriving from a job page (`?role=`); loaded from `src/data/careers/roles.ts` via slug—not hardcoded in the form. Still changeable via an elegant select bound to the catalog.
 
 | Step | Fields |
 |------|--------|
 | 1 · Personal | Full name, email, phone (WhatsApp-capable), country of residence |
-| 2 · Position | Role (pre-selected), years of experience, current company (optional), current position (optional) |
+| 2 · Position | Role (from catalog / `?role=`), years of experience, current company (optional), current position (optional) |
 | 3 · Professional profile | LinkedIn, GitHub (optional), portfolio (optional) |
 | 4 · Resume | Drag-and-drop via `ResumeDropzone`; PDF/DOCX validation; upload/extract progress; attempt `/api/ai/extract-text` |
 | 5 · Questions | Why are you interested in this role? · Why are you a strong fit? · Anything else you'd like us to know? (optional) |
-| 6 · Review | Summary of all answers → Submit |
+| 6 · Review | Full summary: personal, selected role, resume, professional links, responses. **Edit any section** before submit (jump back to that step). |
+| — | Submit |
 
 **Submit:** `POST /api/applications` → on success navigate to `/application/success?applicationId=<id>`.
 
@@ -245,52 +263,90 @@ interface ApplicationRepository {
 
 **Next.js note:** Memory store must be a **module-level singleton** so App Router handlers in the same process share state. Document that serverless multi-instance / restarts clear data (acceptable for demo).
 
-### Application record
+### Application record (future-proof shape)
+
+Define the complete nested model now so UI and API stay stable when swapping to PostgreSQL/Supabase. `analysis` starts as `null`; Foundry fills it later (this iteration may keep live insights in `CandidateStore` and optionally write a subset back—prefer leaving `analysis: null` on create).
 
 ```ts
-type ApplicationStatus = "received" | "analyzing" | "ready" | "demo";
+interface ApplicationRoleRef {
+  slug: string;
+  title: string;
+  department: string;
+  location: string;
+  employmentType: string;
+  experience: string;
+}
 
-interface Application {
-  id: string;                 // APP-2026-00124
-  createdAt: string;          // ISO
-  roleSlug: string;
-  roleTitle: string;
-  // Personal
+interface ApplicationPersonal {
   fullName: string;
   email: string;
-  phone: string;              // WhatsApp-capable contact number
+  phone: string;
   countryOfResidence: string;
-  // Position
-  yearsOfExperience: string;  // e.g. "0-1" | "1-3" | "3-5" | "5-8" | "8+"
+}
+
+interface ApplicationProfessional {
+  yearsOfExperience: string;
   currentCompany?: string | null;
   currentPosition?: string | null;
-  // Profile
   linkedInUrl: string;
   githubUrl?: string | null;
   portfolioUrl?: string | null;
-  // Questions (original wording in UI; stored as answers)
+}
+
+interface ApplicationResume {
+  fileName?: string | null;
+  mimeType?: string | null;
+  sizeBytes?: number | null;
+  text?: string | null;
+}
+
+interface ApplicationAnswers {
   interestReason: string;
   strongFitReason: string;
   additionalNotes?: string | null;
-  // Resume
-  resumeFileName?: string | null;
-  resumeMimeType?: string | null;
-  resumeSizeBytes?: number | null;
-  resumeText?: string | null;
-  status: ApplicationStatus;  // default "received"
+}
+
+interface ApplicationAnalysis {
+  skills: string[];
+  atsScore: number | null;
+  summary: string | null;
+  strengths: string[];
+  risks: string[];
+  interviewQuestions: string[];
+}
+
+interface ApplicationMetadata {
+  source: "tamm-careers";
+  userAgent?: string | null;
+  referrer?: string | null;
+}
+
+type ApplicationStatus = "received" | "analyzing" | "ready" | "demo";
+
+interface Application {
+  id: string;
+  role: ApplicationRoleRef;
+  status: ApplicationStatus;
+  submittedAt: string;
+  personal: ApplicationPersonal;
+  professional: ApplicationProfessional;
+  resume: ApplicationResume;
+  answers: ApplicationAnswers;
+  analysis: ApplicationAnalysis | null;
+  metadata: ApplicationMetadata;
 }
 ```
 
+**Create payload:** same nested shape without `id`, `submittedAt`, `status`, `analysis` (server assigns those). Role object is resolved server-side from `role.slug` against the careers catalog (authoritative titles/department/etc.).
+
 **Status semantics (keep thin):**
 
-- `received` — stored, not yet opened for analysis in this session  
-- `analyzing` — optional transient client-side while pipeline runs (may not persist)  
-- `ready` — optional: set after successful live AI hydrate (persist via `updateStatus` if added; otherwise client-local is fine for demo)  
-- `demo` — analysis shown from demo fallback (no live resume text)
+- `received` — stored, not yet analyzed in this session  
+- `analyzing` — optional transient while pipeline runs  
+- `ready` — optional after successful live AI hydrate  
+- `demo` — analysis shown from demo fallback (no resume text)  
 
-For this iteration, **persisting analysis results into the repository is out of scope**. Analysis lives in `CandidateStore` after hydrate. List “analysis status” can be derived: `resumeText ? "Ready to analyze" : "Demo fallback"` until opened; after successful pipeline in-session, show “Analyzed”.
-
-Optional small repo method `updateStatus(id, status)` is allowed if it keeps the list honest without storing full AI payloads.
+For this iteration, **persisting full AI payloads is optional**. Prefer: create with `analysis: null`; run AI into `CandidateStore` on select; optionally `PATCH` analysis later. List “analysis status” can derive from `resume.text` and whether the session was analyzed.
 
 ### API design
 
@@ -326,11 +382,11 @@ Mirror style of `src/lib/ai/api-client.ts`.
 
 | Column / field | Source |
 |----------------|--------|
-| Candidate name | `fullName` |
-| Role | `roleTitle` |
-| Submitted time | `createdAt` |
-| Resume status | metadata / `resumeText` presence |
-| Analysis status | derived (see §5) |
+| Candidate name | `personal.fullName` |
+| Role | `role.title` |
+| Submitted time | `submittedAt` |
+| Resume status | `resume.fileName` / `resume.text` presence |
+| Analysis status | derived from `analysis` / resume text / session |
 
 Empty state: “No applications yet — candidates apply via Tamm Careers.”
 
@@ -338,11 +394,11 @@ Empty state: “No applications yet — candidates apply via Tamm Careers.”
 
 1. `GET /api/applications/[id]`.
 2. Set selected application id in local recruiter UI state.
-3. If `resumeText` present:
-   - Run existing `useLiveAiPipeline` (or shared service) with `{ resumeText, linkedInUrl }`.
+3. If `resume.text` present:
+   - Run existing `useLiveAiPipeline` (or shared service) with `{ resumeText: resume.text, linkedInUrl: professional.linkedInUrl }`.
    - On complete → `setCandidate(session)` (existing store).
-   - Prefer mapping `fullName` / `roleTitle` onto the session when building.
-4. If no `resumeText`:
+   - Prefer mapping `personal.fullName` / `role.title` onto the session when building.
+4. If no `resume.text`:
    - Seed from `DEMO_CANDIDATE` (or thin merge of application personal fields + demo analysis).
    - Surface a clear non-blocking notice: “Showing representative demo analysis — resume text unavailable.”
 5. Existing panels unchanged: overview scores, resume summary, skills, radar, timeline, strengths/risks, interview Qs, evaluation, hiring recommendation, export.

@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown, Globe } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePrefersReducedMotion } from "@/hooks";
 import { useLocale } from "@/lib/i18n/hooks";
 import { locales } from "@/lib/i18n/locale";
 import type { LocaleCode } from "@/lib/i18n/types";
@@ -12,6 +13,7 @@ const localeList = Object.values(locales);
 
 export function LanguageSwitcher({ className }: { className?: string }) {
   const { locale, setLocale, t } = useLocale();
+  const reduced = usePrefersReducedMotion();
   const [open, setOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -133,10 +135,10 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             aria-label={t.navigation.language}
             tabIndex={-1}
             onKeyDown={onMenuKeyDown}
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: reduced ? 0 : 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="absolute end-0 top-[calc(100%+8px)] z-50 min-w-[160px] overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--surface)] p-1 shadow-[var(--shadow)]"
           >
             {localeList.map((meta, index) => {

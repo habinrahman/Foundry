@@ -44,13 +44,11 @@ export function FoundryPipeline({ className }: { className?: string }) {
       title={pipeline.title}
       description={pipeline.description}
     >
-      <ol
-        ref={ref}
-        aria-label={pipeline.listAriaLabel}
-        className="relative flex flex-col gap-8 lg:grid lg:grid-cols-6 lg:gap-4"
-      >
+      <div className="relative">
         {/* Decorative connector spanning the icon row—layered diagram, not
-         * the only representation; the <ol> below carries the real content. */}
+         * the only representation; the <ol> below carries the real content.
+         * Kept as a sibling of the list (not a child) so the <ol> only ever
+         * contains <li> elements, per valid list semantics. */}
         <span
           aria-hidden
           className="pointer-events-none absolute inset-x-[8.4%] top-7 hidden h-px overflow-hidden bg-[var(--border)] lg:block"
@@ -63,61 +61,67 @@ export function FoundryPipeline({ className }: { className?: string }) {
           />
         </span>
 
-        {pipeline.stages.map((stage, index) => {
-          const Icon = STAGE_ICONS[index];
-          const isLast = index === pipeline.stages.length - 1;
+        <ol
+          ref={ref}
+          aria-label={pipeline.listAriaLabel}
+          className="relative flex flex-col gap-8 lg:grid lg:grid-cols-6 lg:gap-4"
+        >
+          {pipeline.stages.map((stage, index) => {
+            const Icon = STAGE_ICONS[index];
+            const isLast = index === pipeline.stages.length - 1;
 
-          return (
-            <li
-              key={stage.title}
-              className="relative flex items-start gap-4 lg:flex-col lg:items-center lg:gap-0 lg:text-center"
-            >
-              {!isLast ? (
-                <span
-                  aria-hidden
-                  className="absolute start-7 top-14 h-8 w-px overflow-hidden bg-[var(--border)] lg:hidden"
-                >
-                  <motion.span
-                    className="block h-full w-full origin-top bg-[var(--accent)]"
-                    initial={reduced ? undefined : { scaleY: 0 }}
-                    animate={active ? { scaleY: 1 } : undefined}
-                    transition={{ duration: 0.5, delay: 0.1 + index * 0.12, ease: [0.22, 1, 0.36, 1] }}
-                  />
-                </span>
-              ) : null}
-
-              <motion.span
-                aria-hidden
-                className={cn(
-                  "relative z-10 inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full",
-                  "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--accent)] shadow-[var(--shadow)]"
-                )}
-                initial={reduced ? undefined : { opacity: 0, scale: 0.85 }}
-                animate={active ? { opacity: 1, scale: 1 } : undefined}
-                transition={{ duration: 0.45, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
+            return (
+              <li
+                key={stage.title}
+                className="relative flex items-start gap-4 lg:flex-col lg:items-center lg:gap-0 lg:text-center"
               >
-                {!reduced ? (
-                  <motion.span
+                {!isLast ? (
+                  <span
                     aria-hidden
-                    className="absolute inset-0 rounded-full bg-[var(--accent-soft)]"
-                    initial={{ opacity: 0.55, scale: 1 }}
-                    animate={active ? { opacity: 0, scale: 1.7 } : undefined}
-                    transition={{ duration: 0.9, delay: 0.1 + index * 0.12, ease: "easeOut" }}
-                  />
+                    className="absolute start-7 top-14 h-8 w-px overflow-hidden bg-[var(--border)] lg:hidden"
+                  >
+                    <motion.span
+                      className="block h-full w-full origin-top bg-[var(--accent)]"
+                      initial={reduced ? undefined : { scaleY: 0 }}
+                      animate={active ? { scaleY: 1 } : undefined}
+                      transition={{ duration: 0.5, delay: 0.1 + index * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                    />
+                  </span>
                 ) : null}
-                <Icon className="h-6 w-6" />
-              </motion.span>
 
-              <div className="lg:mt-4">
-                <h3 className="font-heading text-base font-semibold">{stage.title}</h3>
-                <p className="mt-1.5 max-w-[220px] text-sm leading-relaxed text-[var(--muted)] lg:mx-auto">
-                  {stage.body}
-                </p>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
+                <motion.span
+                  aria-hidden
+                  className={cn(
+                    "relative z-10 inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full",
+                    "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--accent)] shadow-[var(--shadow)]"
+                  )}
+                  initial={reduced ? undefined : { opacity: 0, scale: 0.85 }}
+                  animate={active ? { opacity: 1, scale: 1 } : undefined}
+                  transition={{ duration: 0.45, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {!reduced ? (
+                    <motion.span
+                      aria-hidden
+                      className="absolute inset-0 rounded-full bg-[var(--accent-soft)]"
+                      initial={{ opacity: 0.55, scale: 1 }}
+                      animate={active ? { opacity: 0, scale: 1.7 } : undefined}
+                      transition={{ duration: 0.9, delay: 0.1 + index * 0.12, ease: "easeOut" }}
+                    />
+                  ) : null}
+                  <Icon className="h-6 w-6" />
+                </motion.span>
+
+                <div className="lg:mt-4">
+                  <h3 className="font-heading text-base font-semibold">{stage.title}</h3>
+                  <p className="mt-1.5 max-w-[220px] text-sm leading-relaxed text-[var(--muted)] lg:mx-auto">
+                    {stage.body}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
     </Section>
   );
 }

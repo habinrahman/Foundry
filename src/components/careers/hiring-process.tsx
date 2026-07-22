@@ -21,11 +21,22 @@ export function HiringProcess({ className }: { className?: string }) {
         <motion.li
           key={step.title}
           className="relative rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow)]"
-          initial={reduced ? false : { opacity: 0, y: 16 }}
+          initial={reduced ? false : { opacity: 0, y: 20 }}
           whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-40px" }}
-          transition={{ delay: index * 0.06, duration: 0.45 }}
+          transition={{ delay: index * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
+          {!reduced && index < STEPS.length - 1 ? (
+            <motion.span
+              className="absolute left-[calc(50%+24px)] top-8 hidden h-px bg-gradient-to-r from-[var(--accent)]/50 to-transparent md:block"
+              style={{ width: "calc(100% - 16px)" }}
+              initial={{ scaleX: 0, originX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 + index * 0.08, duration: 0.55 }}
+              aria-hidden
+            />
+          ) : null}
           <p className="font-mono text-xs text-[var(--accent)]">
             {String(index + 1).padStart(2, "0")}
           </p>

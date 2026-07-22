@@ -6,6 +6,7 @@ export interface CareerRole {
   employmentType: string;
   experience: string;
   summary: string;
+  technologies: string[];
   responsibilities: string[];
   requirements: string[];
   featured?: boolean;
@@ -21,7 +22,8 @@ export const CAREERS_ROLES: CareerRole[] = [
     experience: "3+ years",
     featured: true,
     summary:
-      "Ship production AI features that help manufacturers make better decisions—bridging model quality, product craft, and real plant-floor constraints.",
+      "Help manufacturers make better decisions using production AI—bridging model quality, product craft, and plant-floor constraints.",
+    technologies: ["TypeScript", "Python", "LLMs", "React", "FastAPI"],
     responsibilities: [
       "Design and ship end-to-end AI product surfaces used by operators and engineers",
       "Partner with research and platform teams to productionize models and agents",
@@ -45,7 +47,8 @@ export const CAREERS_ROLES: CareerRole[] = [
     employmentType: "Full-time",
     experience: "5+ years",
     summary:
-      "Help define the AI stack that powers manufacturing intelligence—architecture, evaluation, and the first generation of durable agent systems.",
+      "Help define the AI stack that powers manufacturing intelligence—architecture, evaluation, and durable agent systems.",
+    technologies: ["Python", "LLMs", "RAG", "TypeScript", "Cloud"],
     responsibilities: [
       "Set technical direction for core AI services and evaluation harnesses",
       "Build reliable pipelines for document understanding and decision support",
@@ -67,7 +70,8 @@ export const CAREERS_ROLES: CareerRole[] = [
     employmentType: "Full-time",
     experience: "3+ years",
     summary:
-      "Turn research ideas into robust systems—evaluation suites, model adapters, and experiments that improve real manufacturing outcomes.",
+      "Turn research ideas into robust systems—evaluation suites, adapters, and experiments that improve manufacturing outcomes.",
+    technologies: ["Python", "PyTorch", "Evaluation", "NLP", "LLMs"],
     responsibilities: [
       "Design experiments that connect model behavior to product metrics",
       "Build evaluation datasets and regression gates for AI features",
@@ -90,6 +94,7 @@ export const CAREERS_ROLES: CareerRole[] = [
     experience: "3+ years",
     summary:
       "Build generative systems that draft, summarize, and assist across manufacturing knowledge—grounded, fast, and trustworthy.",
+    technologies: ["TypeScript", "Python", "RAG", "LLMs", "Streaming"],
     responsibilities: [
       "Implement generation pipelines with retrieval and structured outputs",
       "Optimize for latency, cost, and answer quality in production",
@@ -112,6 +117,7 @@ export const CAREERS_ROLES: CareerRole[] = [
     experience: "5+ years",
     summary:
       "Design resilient APIs and services that move manufacturing data securely—from ingestion to insight—at production scale.",
+    technologies: ["Node.js", "TypeScript", "PostgreSQL", "APIs", "Cloud"],
     responsibilities: [
       "Build and evolve Node.js services with strong typing and observability",
       "Design APIs used by product and AI surfaces",
@@ -133,7 +139,8 @@ export const CAREERS_ROLES: CareerRole[] = [
     employmentType: "Full-time",
     experience: "8+ years",
     summary:
-      "Lead a product engineering team shipping manufacturing AI—setting technical bar, coaching people, and aligning delivery with impact.",
+      "Lead a product engineering team shipping manufacturing AI—setting the technical bar and aligning delivery with impact.",
+    technologies: ["Architecture", "TypeScript", "People", "Delivery", "AI"],
     responsibilities: [
       "Lead roadmap execution across product and platform initiatives",
       "Coach engineers; run crisp planning and review rituals",

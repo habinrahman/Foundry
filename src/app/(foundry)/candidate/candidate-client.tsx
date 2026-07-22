@@ -13,6 +13,8 @@ import { useLiveAiPipeline } from "@/hooks/use-live-ai-pipeline";
 import { useCandidateStore } from "@/store/candidate-store";
 import { DEMO_RESUME_TEXT } from "@/data/demo-resume-text";
 import { formatTalentApiError } from "@/lib/ai/api-client";
+import { formatMessage } from "@/lib/i18n/format-message";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 
 type Phase = "boot" | "upload" | "linkedin" | "analyzing" | "insight";
@@ -25,6 +27,7 @@ interface ChatBubble {
 
 export function CandidateFlowClient() {
   const { candidate, setCandidate } = useCandidateStore();
+  const { t, aiLocale } = useLocale();
   const [phase, setPhase] = useState<Phase>("boot");
   const [fileName, setFileName] = useState<string | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -37,6 +40,12 @@ export function CandidateFlowClient() {
     onComplete: (session) => {
       setCandidate(session);
       setPhase("insight");
+    },
+    messages: {
+      missingApiKey: t.ai.errors.missingApiKey,
+      rateLimited: t.ai.errors.rateLimited,
+      generic: t.ai.errors.generic,
+      noResumeText: t.ai.errors.noResumeText,
     },
   });
 
@@ -56,19 +65,19 @@ export function CandidateFlowClient() {
   }, [bubbles, phase, pipeline.stageIndex, pipeline.done]);
 
   useEffect(() => {
-    const t = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
       pushFoundry(
         "welcome",
         <TypewriterText
-          text="Drop a resume and I’ll walk the hiring loop with you — parse, reason, interview, report."
+          text={t.foundry.talk.welcome}
           className="text-sm leading-relaxed"
           speedMs={14}
         />
       );
       setPhase("upload");
     }, 350);
-    return () => window.clearTimeout(t);
-  }, [pushFoundry]);
+    return () => window.clearTimeout(timer);
+  }, [pushFoundry, t.foundry.talk.welcome]);
 
   const beginAnalysis = async (withLinkedIn: boolean) => {
     const linkedInUrl =
@@ -77,13 +86,13 @@ export function CandidateFlowClient() {
     if (withLinkedIn && linkedInUrl) {
       pushUser("linkedin", linkedInUrl);
     } else {
-      pushUser("linkedin-skip", "Continue without LinkedIn");
+      pushUser("linkedin-skip", t.foundry.talk.continueWithoutLinkedin);
     }
 
     pushFoundry(
       "analyzing",
       <span className="text-sm text-[var(--muted)]">
-        Running the live AI hiring pipeline…
+        {t.foundry.talk.analyzingMessage}
       </span>
     );
     setPhase("analyzing");
@@ -93,12 +102,17 @@ export function CandidateFlowClient() {
         file: resumeFile,
         resumeText: demoResumeText ?? undefined,
         linkedInUrl,
+        locale: aiLocale,
       });
     } catch (error) {
       pushFoundry(
         "pipeline-error",
         <span className="text-sm text-[var(--danger)]">
-          {formatTalentApiError(error)}
+          {formatTalentApiError(error, {
+            missingApiKey: t.ai.errors.missingApiKey,
+            rateLimited: t.ai.errors.rateLimited,
+            generic: t.ai.errors.generic,
+          })}
         </span>
       );
       setPhase("linkedin");
@@ -109,11 +123,14 @@ export function CandidateFlowClient() {
     setResumeFile(file);
     setDemoResumeText(null);
     setFileName(file.name);
-    pushUser(`file-${file.name}`, `Uploaded ${file.name}`);
+    pushUser(
+      `file-${file.name}`,
+      formatMessage(t.foundry.talk.uploadedFile, { fileName: file.name })
+    );
     pushFoundry(
       "ask-linkedin",
       <TypewriterText
-        text="Got it. Optional: paste a LinkedIn URL so I can cross-check signals — or continue without it."
+        text={t.foundry.talk.askLinkedin}
         className="text-sm leading-relaxed"
         speedMs={12}
       />
@@ -127,17 +144,17 @@ export function CandidateFlowClient() {
         <FadeIn>
           <div className="mb-8">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
-              Conversation
+              {t.foundry.talk.eyebrow}
             </p>
             <h1 className="mt-2 font-heading text-3xl tracking-tight sm:text-4xl">
-              Talk to Foundry
+              {t.foundry.talk.title}
             </h1>
           </div>
         </FadeIn>
 
         <div
           className="flex flex-1 flex-col gap-4 pb-24 sm:pb-8"
-          aria-label="AI conversation"
+          aria-label={t.foundry.talk.ariaLabel}
           role="log"
           aria-relevant="additions"
         >
@@ -157,7 +174,7 @@ export function CandidateFlowClient() {
               {bubble.role === "foundry" ? (
                 <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--accent)]">
                   <Sparkles className="h-3 w-3" aria-hidden />
-                  Foundry
+                  {t.foundry.talk.foundryLabel}
                 </p>
               ) : null}
               {bubble.content}
@@ -178,11 +195,11 @@ export function CandidateFlowClient() {
                   type="button"
                   className="mt-3 text-xs text-[var(--muted)] underline-offset-4 transition hover:text-[var(--foreground)] hover:underline"
                   onClick={() => {
-                    pushUser("demo-file", "Use demo resume (Aisha Rahman)");
+                    pushUser("demo-file", t.foundry.talk.demoFileLabel);
                     pushFoundry(
                       "ask-linkedin",
                       <TypewriterText
-                        text="Using the demo resume text with live Gemini analysis. Add LinkedIn if you want — or continue."
+                        text={t.foundry.talk.demoUsed}
                         className="text-sm leading-relaxed"
                         speedMs={12}
                       />
@@ -193,7 +210,7 @@ export function CandidateFlowClient() {
                     setPhase("linkedin");
                   }}
                 >
-                  Skip upload — use demo candidate
+                  {t.foundry.talk.skipUploadDemo}
                 </button>
               </motion.div>
             ) : null}
@@ -210,14 +227,14 @@ export function CandidateFlowClient() {
                   htmlFor="linkedin"
                   className="mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--muted)]"
                 >
-                  LinkedIn URL
+                  {t.foundry.talk.linkedInLabel}
                 </label>
                 <input
                   id="linkedin"
                   type="url"
                   value={linkedin}
                   onChange={(e) => setLinkedin(e.target.value)}
-                  placeholder="https://linkedin.com/in/you"
+                  placeholder={t.foundry.talk.linkedInPlaceholder}
                   className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 text-sm outline-none transition focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/25"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") beginAnalysis(true);
@@ -225,11 +242,11 @@ export function CandidateFlowClient() {
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button variant="primary" onClick={() => beginAnalysis(true)}>
-                    Continue
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                    {t.foundry.talk.continue}
+                    <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden />
                   </Button>
                   <Button variant="ghost" onClick={() => beginAnalysis(false)}>
-                    Skip
+                    {t.foundry.talk.skip}
                   </Button>
                 </div>
               </motion.div>
@@ -265,7 +282,7 @@ export function CandidateFlowClient() {
               >
                 <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--accent)]">
                   <Sparkles className="h-3 w-3" aria-hidden />
-                  Foundry
+                  {t.foundry.talk.foundryLabel}
                 </p>
                 <TypewriterText
                   text={candidate.fit.headline}
@@ -282,14 +299,14 @@ export function CandidateFlowClient() {
                 </div>
                 {fileName ? (
                   <p className="mt-3 text-[11px] text-[var(--muted)]">
-                    Source · {fileName}
+                    {t.foundry.talk.sourcePrefix} · {fileName}
                   </p>
                 ) : null}
                 <div className="mt-5 flex flex-wrap gap-2">
                   <Link href="/recruiter">
                     <Button variant="primary">
-                      Open recruiter report
-                      <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                      {t.foundry.talk.openRecruiterReport}
+                      <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden />
                     </Button>
                   </Link>
                   <Button
@@ -305,7 +322,7 @@ export function CandidateFlowClient() {
                         pushFoundry(
                           `welcome-${Date.now()}`,
                           <TypewriterText
-                            text="Ready when you are — drop another resume or use the demo profile."
+                            text={t.foundry.talk.readyAgain}
                             className="text-sm leading-relaxed"
                             speedMs={12}
                           />
@@ -314,7 +331,7 @@ export function CandidateFlowClient() {
                       }, 180);
                     }}
                   >
-                    Start over
+                    {t.foundry.talk.startOver}
                   </Button>
                 </div>
               </motion.div>

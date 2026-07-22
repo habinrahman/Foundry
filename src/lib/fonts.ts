@@ -1,5 +1,5 @@
 import localFont from "next/font/local";
-import { Inter } from "next/font/google";
+import { IBM_Plex_Sans_Arabic, Inter } from "next/font/google";
 import { GeistMono } from "geist/font/mono";
 
 /**
@@ -60,4 +60,25 @@ export const fontBody = Inter({
 
 export const fontMono = GeistMono;
 
-export const fontVariables = `${fontHeading.variable} ${fontBody.variable} ${fontMono.variable}`;
+/**
+ * IBM Plex Sans Arabic — headings and body copy for the Arabic locale.
+ * Applied via `html[lang="ar"]` CSS rules (see globals.css).
+ */
+export const fontArabic = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic"],
+  variable: "--font-arabic",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+  preload: true,
+  fallback: [
+    "ui-sans-serif",
+    "system-ui",
+    "-apple-system",
+    "BlinkMacSystemFont",
+    "Segoe UI",
+    "Tahoma",
+    "sans-serif",
+  ],
+});
+
+export const fontVariables = `${fontHeading.variable} ${fontBody.variable} ${fontMono.variable} ${fontArabic.variable}`;

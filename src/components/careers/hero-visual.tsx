@@ -2,14 +2,15 @@
 
 import { motion } from "framer-motion";
 import { usePrefersReducedMotion } from "@/hooks";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 
 const NODES = [
-  { id: "resume", label: "Resume", x: 56, y: 160 },
-  { id: "skills", label: "Skills", x: 152, y: 100 },
-  { id: "graph", label: "Knowledge Graph", x: 248, y: 170 },
-  { id: "insights", label: "Insights", x: 344, y: 100 },
-  { id: "decision", label: "Decision", x: 424, y: 160 },
+  { id: "resume", labelKey: "resume", x: 56, y: 160 },
+  { id: "skills", labelKey: "skills", x: 152, y: 100 },
+  { id: "graph", labelKey: "knowledgeGraph", x: 248, y: 170 },
+  { id: "insights", labelKey: "insights", x: 344, y: 100 },
+  { id: "decision", labelKey: "decision", x: 424, y: 160 },
 ] as const;
 
 const EDGES: [number, number][] = [
@@ -24,6 +25,7 @@ const EDGES: [number, number][] = [
 /** Original hiring-intelligence visualization — Resume → Decision. */
 export function CareersHeroVisual({ className }: { className?: string }) {
   const reduced = usePrefersReducedMotion();
+  const { t } = useLocale();
 
   return (
     <div className={cn("relative", className)} aria-hidden>
@@ -31,20 +33,20 @@ export function CareersHeroVisual({ className }: { className?: string }) {
         {!reduced ? (
           <>
             <motion.div
-              className="landing-orb-1 absolute -left-16 top-[-20%] h-64 w-64 rounded-full blur-[100px]"
+              className="landing-orb-1 absolute -start-16 top-[-20%] h-64 w-64 rounded-full blur-[100px]"
               animate={{ x: [0, 24, 0], y: [0, 16, 0] }}
               transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div
-              className="landing-orb-2 absolute -right-12 bottom-[-10%] h-56 w-56 rounded-full blur-[100px]"
+              className="landing-orb-2 absolute -end-12 bottom-[-10%] h-56 w-56 rounded-full blur-[100px]"
               animate={{ x: [0, -18, 0], y: [0, -12, 0] }}
               transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
             />
           </>
         ) : (
           <>
-            <div className="landing-orb-1 absolute -left-16 top-[-20%] h-64 w-64 rounded-full blur-[100px]" />
-            <div className="landing-orb-2 absolute -right-12 bottom-[-10%] h-56 w-56 rounded-full blur-[100px]" />
+            <div className="landing-orb-1 absolute -start-16 top-[-20%] h-64 w-64 rounded-full blur-[100px]" />
+            <div className="landing-orb-2 absolute -end-12 bottom-[-10%] h-56 w-56 rounded-full blur-[100px]" />
           </>
         )}
         <div className="landing-grid-bg absolute inset-0 opacity-40" />
@@ -135,7 +137,7 @@ export function CareersHeroVisual({ className }: { className?: string }) {
                 fontSize="11"
                 fontFamily="var(--font-body)"
               >
-                {node.label}
+                {t.careers.heroVisual.nodes[node.labelKey]}
               </text>
             </g>
           ))}
@@ -163,17 +165,17 @@ export function CareersHeroVisual({ className }: { className?: string }) {
           )}
         </svg>
 
-        <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-end justify-between gap-3">
+        <div className="absolute bottom-4 start-4 end-4 flex flex-wrap items-end justify-between gap-3">
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-glass)] px-3 py-2 text-xs backdrop-blur-md">
             <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)]">
-              Hiring intelligence
+              {t.careers.heroVisual.hiringIntelligence}
             </p>
             <p className="mt-0.5 font-heading text-sm font-semibold text-[var(--foreground)]">
-              Resume → Decision
+              {t.careers.heroVisual.resumeToDecision}
             </p>
           </div>
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-glass)] px-3 py-2 font-mono text-[10px] text-[var(--accent)] backdrop-blur-md">
-            live signal
+            {t.careers.heroVisual.liveSignal}
           </div>
         </div>
       </div>

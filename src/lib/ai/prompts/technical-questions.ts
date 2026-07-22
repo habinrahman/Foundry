@@ -1,15 +1,17 @@
+import type { AILocaleContext } from "@/lib/i18n/types";
 import type { ParsedResume, ResumeAnalysis } from "@/types/candidate";
 import type { AIMessage } from "../provider/types";
-import { formatRoleBrief, TALENT_AI_SYSTEM } from "./system";
+import { buildTalentAiSystem, formatRoleBrief } from "./system";
 
 export function buildTechnicalQuestionsMessages(input: {
   resume: ParsedResume;
   analysis?: ResumeAnalysis | null;
+  locale: AILocaleContext;
 }): AIMessage[] {
   return [
     {
       role: "system",
-      content: `${TALENT_AI_SYSTEM}
+      content: `${buildTalentAiSystem(input.locale)}
 
 Task: GENERATE_TECHNICAL_QUESTIONS
 Generate exactly 10 technical interview questions adapted to this candidate for the AI Product Engineer role.

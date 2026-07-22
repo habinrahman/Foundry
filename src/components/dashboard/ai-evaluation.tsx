@@ -1,6 +1,7 @@
 "use client";
 
 import type { AnswerEvaluation, FitRationale } from "@/types/candidate";
+import { useLocale } from "@/lib/i18n/hooks";
 import { TypewriterText } from "@/components/motion/typewriter-text";
 import { ProgressRing } from "@/components/motion/progress";
 import { Panel, PanelHeader } from "./panel";
@@ -14,16 +15,19 @@ export function AiEvaluationPanel({
   fit: FitRationale;
   delay?: number;
 }) {
+  const { t } = useLocale();
+  const panel = t.recruiter.panels.aiEvaluation;
+
   return (
     <Panel delay={delay}>
       <PanelHeader
-        title="AI Evaluation"
-        subtitle="Streaming narrative with calibrated confidence"
+        title={panel.title}
+        subtitle={panel.subtitle}
         action={
           <ProgressRing
             value={fit.confidence * 100}
             size={56}
-            label="Fit confidence"
+            label={panel.fitConfidence}
           />
         }
       />
@@ -44,8 +48,8 @@ export function AiEvaluationPanel({
         </p>
       </div>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <List title="Evaluation strengths" items={evaluation.strengths} />
-        <List title="Evaluation weaknesses" items={evaluation.weaknesses} />
+        <List title={panel.strengths} items={evaluation.strengths} />
+        <List title={panel.weaknesses} items={evaluation.weaknesses} />
       </div>
     </Panel>
   );
@@ -63,7 +67,7 @@ function List({ title, items }: { title: string; items: string[] }) {
             key={item}
             className="text-xs leading-relaxed text-[var(--foreground)]/85"
           >
-            <span className="mr-2 text-[var(--accent)]">•</span>
+            <span className="me-2 text-[var(--accent)]">•</span>
             {item}
           </li>
         ))}

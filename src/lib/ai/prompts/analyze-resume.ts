@@ -1,15 +1,17 @@
+import type { AILocaleContext } from "@/lib/i18n/types";
 import type { ParsedResume } from "@/types/candidate";
 import type { AIMessage } from "../provider/types";
-import { formatRoleBrief, TALENT_AI_SYSTEM } from "./system";
+import { buildTalentAiSystem, formatRoleBrief } from "./system";
 
 export function buildAnalyzeResumeMessages(input: {
   resume: ParsedResume;
   linkedInUrl?: string | null;
+  locale: AILocaleContext;
 }): AIMessage[] {
   return [
     {
       role: "system",
-      content: `${TALENT_AI_SYSTEM}
+      content: `${buildTalentAiSystem(input.locale)}
 
 Task: ANALYZE_RESUME
 Produce a hiring-oriented analysis for the target role.

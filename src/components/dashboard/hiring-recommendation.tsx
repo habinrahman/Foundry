@@ -2,46 +2,59 @@
 
 import { motion } from "framer-motion";
 import type { HiringRecommendation } from "@/types/candidate";
+import type { Messages } from "@/lib/i18n/dictionary";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 import { useOptimisticRecommendation } from "@/hooks";
 import { useCandidateStore } from "@/store/candidate-store";
 import { Panel, PanelHeader } from "./panel";
 
-const OPTIONS: {
-  value: HiringRecommendation;
-  description: string;
-}[] = [
-  {
-    value: "Strong Hire",
-    description: "Clear yes — advance to offer track",
-  },
-  {
-    value: "Hire",
-    description: "Solid match — proceed with confidence",
-  },
-  {
-    value: "Interview",
-    description: "Promising — continue deeper loops",
-  },
-  {
-    value: "Reject",
-    description: "Below bar — politely decline",
-  },
+const RECOMMENDATION_ORDER: HiringRecommendation[] = [
+  "Strong Hire",
+  "Hire",
+  "Interview",
+  "Reject",
 ];
 
+type RecommendationOptionKey =
+  keyof Messages["recruiter"]["panels"]["hiringRecommendation"]["options"];
+
+const RECOMMENDATION_KEYS: Record<HiringRecommendation, RecommendationOptionKey> = {
+  "Strong Hire": "strongHire",
+  Hire: "hire",
+  Interview: "interview",
+  Reject: "reject",
+};
+
+/** Localized display label for a `HiringRecommendation` enum value (enum itself stays English). */
+export function recommendationLabel(
+  value: HiringRecommendation,
+  t: Messages
+): string {
+  return t.recruiter.panels.hiringRecommendation.options[RECOMMENDATION_KEYS[value]]
+    .label;
+}
+
 export function HiringRecommendationPanel({ delay = 0.32 }: { delay?: number }) {
+  const { t } = useLocale();
   const { candidate } = useCandidateStore();
   const { recommendation, select, isPending } = useOptimisticRecommendation();
+  const panel = t.recruiter.panels.hiringRecommendation;
+
+  const options = RECOMMENDATION_ORDER.map((value) => ({
+    value,
+    ...panel.options[RECOMMENDATION_KEYS[value]],
+  }));
 
   return (
     <Panel delay={delay}>
       <PanelHeader
-        title="Hiring Recommendation"
-        subtitle="Optimistic UI — updates in-memory session instantly"
+        title={panel.title}
+        subtitle={panel.subtitle}
         action={
           isPending ? (
             <span className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
-              Saving…
+              {panel.saving}
             </span>
           ) : null
         }
@@ -49,9 +62,9 @@ export function HiringRecommendationPanel({ delay = 0.32 }: { delay?: number }) 
       <div
         className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
         role="radiogroup"
-        aria-label="Hiring recommendation"
+        aria-label={panel.title}
       >
-        {OPTIONS.map((option, index) => {
+        {options.map((option, index) => {
           const active = recommendation === option.value;
           return (
             <motion.button
@@ -64,14 +77,14 @@ export function HiringRecommendationPanel({ delay = 0.32 }: { delay?: number }) 
               transition={{ delay: delay + index * 0.04 }}
               onClick={() => select(option.value)}
               className={cn(
-                "rounded-xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+                "rounded-xl border p-4 text-start transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
                 active
                   ? toneActive(option.value)
                   : "border-[var(--border)] bg-[var(--background)]/40 hover:border-[var(--border-strong)]"
               )}
             >
               <p className="font-heading text-sm font-semibold">
-                {option.value}
+                {option.label}
               </p>
               <p className="mt-1 text-[11px] leading-relaxed text-[var(--muted)]">
                 {option.description}
@@ -81,7 +94,7 @@ export function HiringRecommendationPanel({ delay = 0.32 }: { delay?: number }) 
         })}
       </div>
       <p className="mt-4 text-xs text-[var(--muted)]">
-        AI rationale: {candidate.analysis.recommendationRationale}
+        {panel.rationalePrefix}: {candidate.analysis.recommendationRationale}
       </p>
     </Panel>
   );

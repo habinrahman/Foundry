@@ -1,15 +1,17 @@
+import type { AILocaleContext } from "@/lib/i18n/types";
 import type { ParsedResume, ResumeAnalysis } from "@/types/candidate";
 import type { AIMessage } from "../provider/types";
-import { formatRoleBrief, TALENT_AI_SYSTEM } from "./system";
+import { buildTalentAiSystem, formatRoleBrief } from "./system";
 
 export function buildFitRationaleMessages(input: {
   resume: ParsedResume;
   analysis: ResumeAnalysis;
+  locale: AILocaleContext;
 }): AIMessage[] {
   return [
     {
       role: "system",
-      content: `${TALENT_AI_SYSTEM}
+      content: `${buildTalentAiSystem(input.locale)}
 
 Task: WHY_YOU_ARE_A_FIT
 Write a tailored "Why you're a fit" rationale for the AI Product Engineer role.
@@ -42,11 +44,12 @@ Do not invent experience. Ground every claim in the resume/analysis.`,
 export function buildFitRationaleStreamMessages(input: {
   resume: ParsedResume;
   analysis: ResumeAnalysis;
+  locale: AILocaleContext;
 }): AIMessage[] {
   return [
     {
       role: "system",
-      content: `${TALENT_AI_SYSTEM}
+      content: `${buildTalentAiSystem(input.locale)}
 
 Task: WHY_YOU_ARE_A_FIT_STREAM
 Write a candidate-facing markdown narrative titled "Why you're a fit" for the AI Product Engineer role.

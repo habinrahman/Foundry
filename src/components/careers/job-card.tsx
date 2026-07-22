@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CareerRole } from "@/data/careers/roles";
+import { getRoleCopy, localizeRoleMeta } from "@/lib/careers-i18n";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 
 export function JobCard({
@@ -13,6 +17,10 @@ export function JobCard({
   className?: string;
   featured?: boolean;
 }) {
+  const { t } = useLocale();
+  const meta = localizeRoleMeta(t, role);
+  const copy = getRoleCopy(t, role);
+
   return (
     <article
       className={cn(
@@ -23,17 +31,17 @@ export function JobCard({
     >
       <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]">
         <span className="rounded-full border border-[var(--border)] bg-[var(--background)] px-2.5 py-0.5 font-medium text-[var(--foreground)]">
-          {role.department}
+          {meta.department}
         </span>
         <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-2.5 py-0.5">
           <MapPin className="h-3 w-3" aria-hidden />
-          {role.location}
+          {meta.location}
         </span>
         <span className="rounded-full border border-[var(--border)] px-2.5 py-0.5">
-          {role.employmentType}
+          {meta.employmentType}
         </span>
         <span className="rounded-full border border-[var(--border)] px-2.5 py-0.5">
-          {role.experience}
+          {meta.experience}
         </span>
       </div>
 
@@ -47,12 +55,12 @@ export function JobCard({
       </h3>
 
       <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--muted)] sm:text-[15px]">
-        {role.summary}
+        {copy.summary}
       </p>
 
       <div className="mt-5">
         <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
-          Technologies
+          {t.careers.jobCard.technologies}
         </p>
         <ul className="mt-2.5 flex flex-wrap gap-2">
           {role.technologies.map((tech) => (
@@ -69,13 +77,13 @@ export function JobCard({
       <div className="mt-7 flex flex-wrap gap-2">
         <Link href={`/apply?role=${role.slug}`}>
           <Button variant="primary" size="sm" className="rounded-full px-5">
-            Apply
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            {t.careers.jobCard.apply}
+            <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden />
           </Button>
         </Link>
         <Link href={`/careers/${role.slug}`}>
           <Button variant="secondary" size="sm" className="rounded-full px-4">
-            View role
+            {t.careers.jobCard.viewRole}
           </Button>
         </Link>
       </div>

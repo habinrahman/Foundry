@@ -43,7 +43,8 @@ export function CareersFaq({ className }: { className?: string }) {
                   <span>{item.question}</span>
                   <ChevronDown
                     className={cn(
-                      "h-5 w-5 shrink-0 text-[var(--muted)] transition-transform duration-300",
+                      "h-5 w-5 shrink-0 text-[var(--muted)] transition-transform",
+                      reduced ? "duration-0" : "duration-300",
                       isOpen && "rotate-180 text-[var(--accent)]"
                     )}
                     aria-hidden

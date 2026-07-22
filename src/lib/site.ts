@@ -1,7 +1,7 @@
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "Foundry";
 export const APP_TAGLINE = "AI Hiring Intelligence Platform";
 export const APP_DESCRIPTION =
-  "Foundry is an AI hiring intelligence platform — parse resumes, generate adaptive interviews, evaluate answers, and ship executive hiring reports.";
+  "Foundry is an AI Hiring Intelligence Platform — a premium candidate careers experience paired with an internal recruiter intelligence workflow for resume parsing, skill extraction, ATS scoring, interview questions, and hiring recommendations.";
 
 export function getAppUrl(): string {
   if (process.env.NEXT_PUBLIC_APP_URL) {

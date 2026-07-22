@@ -7,6 +7,7 @@ import type {
   ResumeAnalysis,
   TechnicalQuestionSet,
 } from "@/types/candidate";
+import type { LocaleCode } from "@/lib/i18n/types";
 
 export interface SkillMatrixItem {
   skill: string;
@@ -51,6 +52,8 @@ export interface CandidateSession {
   radar: RadarAxis[];
   timeline: TimelineEvent[];
   updatedAt: string;
+  /** Locale the AI analysis/fit/questions text was generated in. */
+  analysisLanguage: LocaleCode;
 }
 
 export interface HiringDecisionOption {

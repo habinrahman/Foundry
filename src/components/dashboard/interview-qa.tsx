@@ -6,6 +6,7 @@ import type {
   CandidateAnswer,
   TechnicalQuestionSet,
 } from "@/types/candidate";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 import { Panel, PanelHeader } from "./panel";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -21,6 +22,10 @@ export const InterviewQaPanel = memo(function InterviewQaPanel({
   evaluation: AnswerEvaluation;
   delay?: number;
 }) {
+  const { t, formatNumber } = useLocale();
+  const panel = t.recruiter.panels.interviewQa;
+  const emptyValue = t.common.emptyValue;
+
   const rows = useMemo(() => {
     const answerMap = new Map(answers.map((a) => [a.questionId, a.answer]));
     const evalMap = new Map(
@@ -29,17 +34,17 @@ export const InterviewQaPanel = memo(function InterviewQaPanel({
     return questions.questions.map((q, index) => ({
       q,
       index,
-      answer: answerMap.get(q.id) ?? "—",
+      answer: answerMap.get(q.id) ?? emptyValue,
       evalItem: evalMap.get(q.id),
     }));
-  }, [answers, evaluation.perQuestion, questions.questions]);
+  }, [answers, evaluation.perQuestion, questions.questions, emptyValue]);
 
   if (rows.length === 0) {
     return (
       <Panel delay={delay}>
         <EmptyState
-          title="No interview yet"
-          description="Run the candidate conversation to generate adaptive technical questions."
+          title={panel.emptyTitle}
+          description={panel.emptyDescription}
         />
       </Panel>
     );
@@ -49,31 +54,29 @@ export const InterviewQaPanel = memo(function InterviewQaPanel({
     <Panel delay={delay} className="overflow-hidden p-0 sm:p-0">
       <div className="border-b border-[var(--border)] px-5 pt-5">
         <PanelHeader
-          title="Interview table"
+          title={panel.title}
           subtitle={questions.adaptationNotes}
         />
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-          <caption className="sr-only">
-            Technical interview questions, answers, and AI scores
-          </caption>
+        <table className="w-full min-w-[720px] border-collapse text-start text-sm">
+          <caption className="sr-only">{panel.caption}</caption>
           <thead className="sticky top-0 bg-[var(--surface-elevated)] text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
             <tr className="border-b border-[var(--border)]">
               <th scope="col" className="px-5 py-3 font-medium">
-                #
+                {panel.columns.index}
               </th>
               <th scope="col" className="px-3 py-3 font-medium">
-                Question
+                {panel.columns.question}
               </th>
               <th scope="col" className="px-3 py-3 font-medium">
-                Answer
+                {panel.columns.answer}
               </th>
               <th scope="col" className="px-3 py-3 font-medium">
-                AI note
+                {panel.columns.aiNote}
               </th>
-              <th scope="col" className="px-5 py-3 text-right font-medium">
-                Score
+              <th scope="col" className="px-5 py-3 text-end font-medium">
+                {panel.columns.score}
               </th>
             </tr>
           </thead>
@@ -104,7 +107,7 @@ export const InterviewQaPanel = memo(function InterviewQaPanel({
                 </td>
                 <td className="px-3 py-4">
                   <p className="max-w-xs text-xs leading-relaxed text-[var(--muted)]">
-                    {evalItem?.feedback ?? "—"}
+                    {evalItem?.feedback ?? emptyValue}
                   </p>
                   {evalItem ? (
                     <div className="mt-2 flex flex-wrap gap-1">
@@ -117,14 +120,14 @@ export const InterviewQaPanel = memo(function InterviewQaPanel({
                     </div>
                   ) : null}
                 </td>
-                <td className="px-5 py-4 text-right">
+                <td className="px-5 py-4 text-end">
                   <span
                     className={cn(
                       "inline-flex min-w-10 justify-center rounded-lg px-2 py-1 font-mono text-xs tabular-nums",
                       scoreTone(evalItem?.score ?? 0)
                     )}
                   >
-                    {evalItem ? `${evalItem.score}/10` : "—"}
+                    {evalItem ? `${formatNumber(evalItem.score)}/10` : emptyValue}
                   </span>
                 </td>
               </tr>

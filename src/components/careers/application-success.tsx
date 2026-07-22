@@ -2,37 +2,19 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getApplicationApi } from "@/lib/applications/api-client";
 import type { Application } from "@/lib/applications/types";
+import { formatMessage } from "@/lib/i18n/format-message";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 
-const PIPELINE = [
-  {
-    title: "Application received",
-    body: "Your submission is securely stored with your application ID.",
-    state: "done" as const,
-  },
-  {
-    title: "Resume processing",
-    body: "Our hiring platform prepares structured insights for recruiters.",
-    state: "active" as const,
-  },
-  {
-    title: "Recruiter review",
-    body: "A recruiter reviews your profile against the role requirements.",
-    state: "upcoming" as const,
-  },
-  {
-    title: "Interview invitation",
-    body: "If there is a strong match, we will contact you about next steps.",
-    state: "upcoming" as const,
-  },
-] as const;
+type PipelineState = "done" | "active" | "upcoming";
 
 export function ApplicationSuccessView() {
+  const { t } = useLocale();
   const searchParams = useSearchParams();
   const applicationId = searchParams.get("applicationId");
   const [application, setApplication] = useState<Application | null>(null);
@@ -59,8 +41,34 @@ export function ApplicationSuccessView() {
     };
   }, [applicationId]);
 
-  const roleTitle = application?.role.title ?? "the role you selected";
-  const idLabel = application?.id ?? applicationId ?? "—";
+  const roleTitle = application?.role.title ?? t.apply.success.fallbackRole;
+  const idLabel = application?.id ?? applicationId ?? t.common.emptyValue;
+
+  const pipeline = useMemo(() => {
+    const copy = t.apply.success.pipeline;
+    return [
+      {
+        title: copy.receivedTitle,
+        body: copy.receivedBody,
+        state: "done" as PipelineState,
+      },
+      {
+        title: copy.processingTitle,
+        body: copy.processingBody,
+        state: "active" as PipelineState,
+      },
+      {
+        title: copy.reviewTitle,
+        body: copy.reviewBody,
+        state: "upcoming" as PipelineState,
+      },
+      {
+        title: copy.interviewTitle,
+        body: copy.interviewBody,
+        state: "upcoming" as PipelineState,
+      },
+    ];
+  }, [t]);
 
   return (
     <div className="mx-auto max-w-[640px] px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
@@ -69,29 +77,31 @@ export function ApplicationSuccessView() {
           <CheckCircle2 className="h-6 w-6" aria-hidden />
         </div>
         <h1 className="mt-6 font-heading text-3xl tracking-tight sm:text-4xl">
-          Application submitted
+          {t.apply.success.title}
         </h1>
         <p className="mt-3 text-[var(--muted)]" role="status">
           {loading
-            ? "Confirming your application…"
-            : `Thank you for applying for ${roleTitle}.`}
+            ? t.apply.success.confirming
+            : formatMessage(t.apply.success.thankYou, { role: roleTitle })}
         </p>
 
         <div className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3">
           <p className="text-xs uppercase tracking-wider text-[var(--muted)]">
-            Application ID
+            {t.apply.success.applicationIdLabel}
           </p>
           <p className="mt-1 font-mono text-sm font-medium">{idLabel}</p>
         </div>
 
         <div className="mt-10">
-          <h2 className="font-heading text-lg font-semibold">Hiring progress</h2>
+          <h2 className="font-heading text-lg font-semibold">
+            {t.apply.success.hiringProgressTitle}
+          </h2>
           <ol className="relative mt-6 space-y-0">
-            {PIPELINE.map((step, index) => (
+            {pipeline.map((step, index) => (
               <li key={step.title} className="relative flex gap-4 pb-8 last:pb-0">
-                {index < PIPELINE.length - 1 ? (
+                {index < pipeline.length - 1 ? (
                   <span
-                    className="absolute left-[11px] top-7 h-[calc(100%-12px)] w-px bg-[var(--border-strong)]"
+                    className="absolute start-[11px] top-7 h-[calc(100%-12px)] w-px bg-[var(--border-strong)]"
                     aria-hidden
                   />
                 ) : null}
@@ -130,19 +140,18 @@ export function ApplicationSuccessView() {
         </div>
 
         <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--background)]/60 px-4 py-3 text-sm text-[var(--muted)]">
-          Foundry will prepare AI-powered hiring insights for our recruiting
-          team. You do not need to take any further action right now.
+          {t.apply.success.footerNote}
         </div>
 
         <div className="mt-10 flex flex-wrap gap-3">
           <Link href="/careers">
             <Button variant="primary" className="rounded-full px-5">
-              View other roles
+              {t.apply.success.viewOtherRoles}
             </Button>
           </Link>
           <Link href="/">
             <Button variant="secondary" className="rounded-full px-5">
-              Back to careers
+              {t.apply.success.backToCareers}
             </Button>
           </Link>
         </div>

@@ -1,3 +1,5 @@
+import { buildAILocaleContext } from "@/lib/i18n/ai-locale";
+import type { AILocaleContext } from "@/lib/i18n/types";
 import type {
   AnswerEvaluation,
   CandidateAnswer,
@@ -28,27 +30,37 @@ import {
 export interface ParseResumeInput {
   resumeText: string;
   linkedInUrl?: string | null;
+  locale?: AILocaleContext;
 }
 
 export interface AnalyzeResumeInput {
   resume: ParsedResume;
   linkedInUrl?: string | null;
+  locale?: AILocaleContext;
 }
 
 export interface FitRationaleInput {
   resume: ParsedResume;
   analysis: ResumeAnalysis;
+  locale?: AILocaleContext;
 }
 
 export interface GenerateQuestionsInput {
   resume: ParsedResume;
   analysis?: ResumeAnalysis | null;
+  locale?: AILocaleContext;
 }
 
 export interface EvaluateAnswersInput {
   resume: ParsedResume;
   questions: TechnicalQuestion[];
   answers: CandidateAnswer[];
+  locale?: AILocaleContext;
+}
+
+/** Backward-compat default for callers that omit `locale` entirely. */
+function resolveLocale(locale?: AILocaleContext): AILocaleContext {
+  return locale ?? buildAILocaleContext("en");
 }
 
 /**
@@ -77,6 +89,7 @@ export class TalentAI {
       messages: buildParseResumeMessages({
         resumeText: text,
         linkedInUrl: input.linkedInUrl,
+        locale: resolveLocale(input.locale),
       }),
     });
   }
@@ -89,6 +102,7 @@ export class TalentAI {
       messages: buildAnalyzeResumeMessages({
         resume: input.resume,
         linkedInUrl: input.linkedInUrl,
+        locale: resolveLocale(input.locale),
       }),
     });
   }
@@ -100,7 +114,10 @@ export class TalentAI {
       schemaName: "FitRationale",
       schema: fitRationaleSchema,
       temperature: 0.4,
-      messages: buildFitRationaleMessages(input),
+      messages: buildFitRationaleMessages({
+        ...input,
+        locale: resolveLocale(input.locale),
+      }),
     });
   }
 
@@ -112,7 +129,10 @@ export class TalentAI {
   ): AsyncGenerator<string, void, unknown> {
     return this.provider.streamText({
       temperature: 0.5,
-      messages: buildFitRationaleStreamMessages(input),
+      messages: buildFitRationaleStreamMessages({
+        ...input,
+        locale: resolveLocale(input.locale),
+      }),
     });
   }
 
@@ -126,6 +146,7 @@ export class TalentAI {
       messages: buildTechnicalQuestionsMessages({
         resume: input.resume,
         analysis: input.analysis,
+        locale: resolveLocale(input.locale),
       }),
     });
   }
@@ -137,7 +158,10 @@ export class TalentAI {
       schemaName: "AnswerEvaluation",
       schema: answerEvaluationSchema,
       temperature: 0.2,
-      messages: buildEvaluateAnswersMessages(input),
+      messages: buildEvaluateAnswersMessages({
+        ...input,
+        locale: resolveLocale(input.locale),
+      }),
     });
   }
 }

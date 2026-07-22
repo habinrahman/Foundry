@@ -9,18 +9,23 @@ import { CAREERS_ROLES, getRoleBySlug } from "@/data/careers/roles";
 import { createApplicationApi } from "@/lib/applications/api-client";
 import { YEARS_OF_EXPERIENCE } from "@/lib/applications/types";
 import { extractResumeText } from "@/lib/ai/api-client";
+import { formatMessage } from "@/lib/i18n/format-message";
+import { useLocale } from "@/lib/i18n/hooks";
+import type { Messages } from "@/lib/i18n/types";
 import { cn } from "@/lib/utils";
 
-const STEPS = [
-  "Personal",
-  "Position",
-  "Profile",
-  "Resume",
-  "Questions",
-  "Review",
+const STEP_KEYS = [
+  "personal",
+  "position",
+  "profile",
+  "resume",
+  "questions",
+  "review",
 ] as const;
 
 type StepIndex = 0 | 1 | 2 | 3 | 4 | 5;
+
+type ValidationCode = keyof Messages["validation"];
 
 type FormState = {
   roleSlug: string;
@@ -97,6 +102,7 @@ const inputClass =
   "w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30";
 
 export function ApplyForm() {
+  const { t } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const roleParam = searchParams.get("role") ?? "";
@@ -108,7 +114,7 @@ export function ApplyForm() {
 
   const [step, setStep] = useState<StepIndex>(0);
   const [form, setForm] = useState<FormState>(() => initialState(defaultRole));
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, ValidationCode>>({});
   const [extracting, setExtracting] = useState(false);
   const [extractNote, setExtractNote] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -135,26 +141,26 @@ export function ApplyForm() {
   }
 
   function validateStep(index: StepIndex): boolean {
-    const next: Record<string, string> = {};
+    const next: Record<string, ValidationCode> = {};
     if (index === 0) {
-      if (form.fullName.trim().length < 2) next.fullName = "Enter your full name";
+      if (form.fullName.trim().length < 2) next.fullName = "fullNameRequired";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
-        next.email = "Enter a valid email";
-      if (form.phone.trim().length < 7) next.phone = "Enter a phone number";
+        next.email = "emailInvalid";
+      if (form.phone.trim().length < 7) next.phone = "phoneRequired";
       if (form.countryOfResidence.trim().length < 2)
-        next.countryOfResidence = "Enter your country";
+        next.countryOfResidence = "countryRequired";
     }
     if (index === 1) {
-      if (!getRoleBySlug(form.roleSlug)) next.roleSlug = "Select a role";
+      if (!getRoleBySlug(form.roleSlug)) next.roleSlug = "roleRequired";
       if (!YEARS_OF_EXPERIENCE.includes(form.yearsOfExperience))
-        next.yearsOfExperience = "Select experience";
+        next.yearsOfExperience = "experienceRequired";
     }
     if (index === 2) {
       try {
         // Validate URL shape
         new URL(form.linkedInUrl.trim());
       } catch {
-        next.linkedInUrl = "Enter a valid LinkedIn URL";
+        next.linkedInUrl = "linkedInUrlInvalid";
       }
       for (const key of ["githubUrl", "portfolioUrl"] as const) {
         const value = form[key].trim();
@@ -162,21 +168,25 @@ export function ApplyForm() {
         try {
           new URL(value);
         } catch {
-          next[key] = "Enter a valid URL";
+          next[key] = "urlInvalid";
         }
       }
     }
     if (index === 3) {
-      if (!form.resumeFileName) next.resume = "Upload a PDF or DOCX resume";
+      if (!form.resumeFileName) next.resume = "resumeRequired";
     }
     if (index === 4) {
       if (form.interestReason.trim().length < 20)
-        next.interestReason = "Please share at least a short paragraph";
+        next.interestReason = "interestReasonTooShort";
       if (form.strongFitReason.trim().length < 20)
-        next.strongFitReason = "Please share at least a short paragraph";
+        next.strongFitReason = "strongFitReasonTooShort";
     }
     setErrors(next);
     return Object.keys(next).length === 0;
+  }
+
+  function errorText(code?: ValidationCode): string | undefined {
+    return code ? t.validation[code] : undefined;
   }
 
   function goNext() {
@@ -198,11 +208,9 @@ export function ApplyForm() {
     try {
       const result = await extractResumeText(file);
       update("resumeText", result.text);
-      setExtractNote("Resume text extracted for recruiter review.");
+      setExtractNote(t.apply.resumeStep.extractedSuccess);
     } catch {
-      setExtractNote(
-        "File saved. Text extraction was unavailable — recruiters can still review your upload metadata."
-      );
+      setExtractNote(t.apply.resumeStep.extractedFailure);
     } finally {
       setExtracting(false);
     }
@@ -210,7 +218,7 @@ export function ApplyForm() {
 
   async function onSubmit() {
     if (!validateStep(0) || !validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) {
-      setSubmitError("Please complete all required sections before submitting.");
+      setSubmitError(t.apply.errors.incompleteSections);
       return;
     }
     setSubmitting(true);
@@ -247,7 +255,7 @@ export function ApplyForm() {
       router.push(`/application/success?applicationId=${encodeURIComponent(applicationId)}`);
     } catch (error) {
       setSubmitError(
-        error instanceof Error ? error.message : "Unable to submit application."
+        error instanceof Error ? error.message : t.apply.errors.submitFailed
       );
     } finally {
       setSubmitting(false);
@@ -257,21 +265,21 @@ export function ApplyForm() {
   return (
     <div className="mx-auto max-w-[720px] px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
-        Application
+        {t.apply.eyebrow}
       </p>
       <h1 className="mt-3 font-heading text-3xl tracking-tight sm:text-4xl">
-        Apply to {selectedRole?.title ?? "Tamm"}
+        {formatMessage(t.apply.title, {
+          role: selectedRole?.title ?? t.apply.titleFallbackRole,
+        })}
       </h1>
-      <p className="mt-3 text-[var(--muted)]">
-        A short, focused application — review everything before you submit.
-      </p>
+      <p className="mt-3 text-[var(--muted)]">{t.apply.description}</p>
 
-      <ol className="mt-8 flex flex-wrap gap-2" aria-label="Application steps">
-        {STEPS.map((label, index) => {
+      <ol className="mt-8 flex flex-wrap gap-2" aria-label={t.apply.stepsAriaLabel}>
+        {STEP_KEYS.map((key, index) => {
           const active = index === step;
           const done = index < step;
           return (
-            <li key={label}>
+            <li key={key}>
               <button
                 type="button"
                 onClick={() => {
@@ -288,7 +296,7 @@ export function ApplyForm() {
                 aria-current={active ? "step" : undefined}
               >
                 {done ? <Check className="h-3 w-3 text-[var(--accent)]" /> : null}
-                {label}
+                {t.apply.steps[key]}
               </button>
             </li>
           );
@@ -298,7 +306,11 @@ export function ApplyForm() {
       <div className="mt-10 space-y-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)] sm:p-8">
         {step === 0 ? (
           <>
-            <Field label="Full name" htmlFor="fullName" error={errors.fullName}>
+            <Field
+              label={t.apply.fields.fullName}
+              htmlFor="fullName"
+              error={errorText(errors.fullName)}
+            >
               <input
                 id="fullName"
                 className={inputClass}
@@ -308,7 +320,11 @@ export function ApplyForm() {
                 aria-invalid={Boolean(errors.fullName)}
               />
             </Field>
-            <Field label="Email" htmlFor="email" error={errors.email}>
+            <Field
+              label={t.apply.fields.email}
+              htmlFor="email"
+              error={errorText(errors.email)}
+            >
               <input
                 id="email"
                 type="email"
@@ -320,10 +336,10 @@ export function ApplyForm() {
               />
             </Field>
             <Field
-              label="Phone (WhatsApp)"
+              label={t.apply.fields.phone}
               htmlFor="phone"
-              error={errors.phone}
-              hint="Include country code so we can reach you."
+              error={errorText(errors.phone)}
+              hint={t.apply.fields.phoneHint}
             >
               <input
                 id="phone"
@@ -336,9 +352,9 @@ export function ApplyForm() {
               />
             </Field>
             <Field
-              label="Country of residence"
+              label={t.apply.fields.country}
               htmlFor="country"
-              error={errors.countryOfResidence}
+              error={errorText(errors.countryOfResidence)}
             >
               <input
                 id="country"
@@ -354,7 +370,11 @@ export function ApplyForm() {
 
         {step === 1 ? (
           <>
-            <Field label="Role" htmlFor="role" error={errors.roleSlug}>
+            <Field
+              label={t.apply.fields.role}
+              htmlFor="role"
+              error={errorText(errors.roleSlug)}
+            >
               <select
                 id="role"
                 className={inputClass}
@@ -369,9 +389,9 @@ export function ApplyForm() {
               </select>
             </Field>
             <Field
-              label="Years of experience"
+              label={t.apply.fields.yearsOfExperience}
               htmlFor="yoe"
-              error={errors.yearsOfExperience}
+              error={errorText(errors.yearsOfExperience)}
             >
               <select
                 id="yoe"
@@ -386,12 +406,12 @@ export function ApplyForm() {
               >
                 {YEARS_OF_EXPERIENCE.map((y) => (
                   <option key={y} value={y}>
-                    {y} years
+                    {y} {t.apply.fields.yearsSuffix}
                   </option>
                 ))}
               </select>
             </Field>
-            <Field label="Current company (optional)" htmlFor="company">
+            <Field label={t.apply.fields.currentCompany} htmlFor="company">
               <input
                 id="company"
                 className={inputClass}
@@ -399,7 +419,7 @@ export function ApplyForm() {
                 onChange={(e) => update("currentCompany", e.target.value)}
               />
             </Field>
-            <Field label="Current position (optional)" htmlFor="position">
+            <Field label={t.apply.fields.currentPosition} htmlFor="position">
               <input
                 id="position"
                 className={inputClass}
@@ -412,7 +432,11 @@ export function ApplyForm() {
 
         {step === 2 ? (
           <>
-            <Field label="LinkedIn" htmlFor="linkedin" error={errors.linkedInUrl}>
+            <Field
+              label={t.apply.fields.linkedin}
+              htmlFor="linkedin"
+              error={errorText(errors.linkedInUrl)}
+            >
               <input
                 id="linkedin"
                 className={inputClass}
@@ -422,7 +446,11 @@ export function ApplyForm() {
                 aria-invalid={Boolean(errors.linkedInUrl)}
               />
             </Field>
-            <Field label="GitHub (optional)" htmlFor="github" error={errors.githubUrl}>
+            <Field
+              label={t.apply.fields.github}
+              htmlFor="github"
+              error={errorText(errors.githubUrl)}
+            >
               <input
                 id="github"
                 className={inputClass}
@@ -432,9 +460,9 @@ export function ApplyForm() {
               />
             </Field>
             <Field
-              label="Portfolio (optional)"
+              label={t.apply.fields.portfolio}
               htmlFor="portfolio"
-              error={errors.portfolioUrl}
+              error={errorText(errors.portfolioUrl)}
             >
               <input
                 id="portfolio"
@@ -453,12 +481,13 @@ export function ApplyForm() {
             {extracting ? (
               <p className="flex items-center gap-2 text-sm text-[var(--muted)]">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                Extracting resume text…
+                {t.apply.resumeStep.extracting}
               </p>
             ) : null}
             {form.resumeFileName ? (
               <p className="text-sm text-[var(--foreground)]">
-                Selected: <span className="font-medium">{form.resumeFileName}</span>
+                {t.apply.resumeStep.selectedLabel}{" "}
+                <span className="font-medium">{form.resumeFileName}</span>
               </p>
             ) : null}
             {extractNote ? (
@@ -466,7 +495,7 @@ export function ApplyForm() {
             ) : null}
             {errors.resume ? (
               <p className="text-xs text-[var(--danger)]" role="alert">
-                {errors.resume}
+                {errorText(errors.resume)}
               </p>
             ) : null}
           </>
@@ -475,9 +504,9 @@ export function ApplyForm() {
         {step === 4 ? (
           <>
             <Field
-              label="Why are you interested in this role?"
+              label={t.apply.fields.interestReason}
               htmlFor="interest"
-              error={errors.interestReason}
+              error={errorText(errors.interestReason)}
             >
               <textarea
                 id="interest"
@@ -489,9 +518,9 @@ export function ApplyForm() {
               />
             </Field>
             <Field
-              label="Why are you a strong fit?"
+              label={t.apply.fields.strongFitReason}
               htmlFor="fit"
-              error={errors.strongFitReason}
+              error={errorText(errors.strongFitReason)}
             >
               <textarea
                 id="fit"
@@ -502,10 +531,7 @@ export function ApplyForm() {
                 aria-invalid={Boolean(errors.strongFitReason)}
               />
             </Field>
-            <Field
-              label="Anything else you'd like us to know? (optional)"
-              htmlFor="notes"
-            >
+            <Field label={t.apply.fields.additionalNotes} htmlFor="notes">
               <textarea
                 id="notes"
                 rows={3}
@@ -520,52 +546,75 @@ export function ApplyForm() {
         {step === 5 ? (
           <div className="space-y-6">
             <ReviewBlock
-              title="Personal information"
+              title={t.apply.review.personalInfoTitle}
+              editLabel={t.apply.review.edit}
               onEdit={() => setStep(0)}
               rows={[
-                ["Name", form.fullName],
-                ["Email", form.email],
-                ["Phone", form.phone],
-                ["Country", form.countryOfResidence],
+                [t.apply.review.labels.name, form.fullName],
+                [t.apply.review.labels.email, form.email],
+                [t.apply.review.labels.phone, form.phone],
+                [t.apply.review.labels.country, form.countryOfResidence],
               ]}
             />
             <ReviewBlock
-              title="Selected role"
+              title={t.apply.review.selectedRoleTitle}
+              editLabel={t.apply.review.edit}
               onEdit={() => setStep(1)}
               rows={[
-                ["Role", selectedRole?.title ?? form.roleSlug],
-                ["Experience", `${form.yearsOfExperience} years`],
-                ["Company", form.currentCompany || "—"],
-                ["Position", form.currentPosition || "—"],
-              ]}
-            />
-            <ReviewBlock
-              title="Professional links"
-              onEdit={() => setStep(2)}
-              rows={[
-                ["LinkedIn", form.linkedInUrl],
-                ["GitHub", form.githubUrl || "—"],
-                ["Portfolio", form.portfolioUrl || "—"],
-              ]}
-            />
-            <ReviewBlock
-              title="Resume"
-              onEdit={() => setStep(3)}
-              rows={[
-                ["File", form.resumeFileName ?? "—"],
+                [t.apply.review.labels.role, selectedRole?.title ?? form.roleSlug],
                 [
-                  "Text extraction",
-                  form.resumeText ? "Available" : "Unavailable",
+                  t.apply.review.labels.experience,
+                  `${form.yearsOfExperience} ${t.apply.fields.yearsSuffix}`,
+                ],
+                [
+                  t.apply.review.labels.company,
+                  form.currentCompany || t.common.emptyValue,
+                ],
+                [
+                  t.apply.review.labels.position,
+                  form.currentPosition || t.common.emptyValue,
                 ],
               ]}
             />
             <ReviewBlock
-              title="Responses"
+              title={t.apply.review.professionalLinksTitle}
+              editLabel={t.apply.review.edit}
+              onEdit={() => setStep(2)}
+              rows={[
+                [t.apply.review.labels.linkedin, form.linkedInUrl],
+                [
+                  t.apply.review.labels.github,
+                  form.githubUrl || t.common.emptyValue,
+                ],
+                [
+                  t.apply.review.labels.portfolio,
+                  form.portfolioUrl || t.common.emptyValue,
+                ],
+              ]}
+            />
+            <ReviewBlock
+              title={t.apply.review.resumeTitle}
+              editLabel={t.apply.review.edit}
+              onEdit={() => setStep(3)}
+              rows={[
+                [t.apply.review.labels.file, form.resumeFileName ?? t.common.emptyValue],
+                [
+                  t.apply.review.labels.textExtraction,
+                  form.resumeText ? t.apply.review.available : t.apply.review.unavailable,
+                ],
+              ]}
+            />
+            <ReviewBlock
+              title={t.apply.review.responsesTitle}
+              editLabel={t.apply.review.edit}
               onEdit={() => setStep(4)}
               rows={[
-                ["Interest", form.interestReason],
-                ["Strong fit", form.strongFitReason],
-                ["Additional", form.additionalNotes || "—"],
+                [t.apply.review.labels.interest, form.interestReason],
+                [t.apply.review.labels.strongFit, form.strongFitReason],
+                [
+                  t.apply.review.labels.additional,
+                  form.additionalNotes || t.common.emptyValue,
+                ],
               ]}
             />
             {submitError ? (
@@ -581,19 +630,19 @@ export function ApplyForm() {
             variant="ghost"
             onClick={goBack}
             disabled={step === 0 || submitting}
-            leftIcon={<ChevronLeft className="h-4 w-4" />}
+            leftIcon={<ChevronLeft className="h-4 w-4 rtl:rotate-180" />}
           >
-            Back
+            {t.apply.actions.back}
           </Button>
           {step < 5 ? (
             <Button
               variant="primary"
               onClick={goNext}
               disabled={extracting}
-              rightIcon={<ChevronRight className="h-4 w-4" />}
+              rightIcon={<ChevronRight className="h-4 w-4 rtl:rotate-180" />}
               className="rounded-full px-5"
             >
-              Continue
+              {t.apply.actions.continue}
             </Button>
           ) : (
             <Button
@@ -605,10 +654,10 @@ export function ApplyForm() {
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  Submitting…
+                  {t.apply.actions.submitting}
                 </>
               ) : (
-                "Submit application"
+                t.apply.actions.submit
               )}
             </Button>
           )}
@@ -622,17 +671,19 @@ function ReviewBlock({
   title,
   rows,
   onEdit,
+  editLabel,
 }: {
   title: string;
   rows: [string, string][];
   onEdit: () => void;
+  editLabel: string;
 }) {
   return (
     <section className="rounded-xl border border-[var(--border)] p-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-heading text-lg font-semibold">{title}</h2>
         <Button variant="ghost" size="sm" onClick={onEdit}>
-          Edit
+          {editLabel}
         </Button>
       </div>
       <dl className="mt-3 space-y-2">

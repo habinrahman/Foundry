@@ -4,6 +4,7 @@ export const DEMO_CANDIDATE: CandidateSession = {
   id: "cand_demo_aisha",
   roleTitle: "AI Product Engineer",
   updatedAt: new Date().toISOString(),
+  analysisLanguage: "en",
   resume: {
     name: "Aisha Rahman",
     email: "aisha.rahman@email.com",

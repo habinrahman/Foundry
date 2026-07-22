@@ -30,13 +30,34 @@ const DEFAULT_ACCEPT = [
   ".docx",
 ];
 
+const DEFAULT_MESSAGES = {
+  invalidType: "Please upload a PDF or DOCX resume.",
+  tooLarge: (maxSizeMb: number) => `File must be under ${maxSizeMb}MB.`,
+};
+
+export interface FileDropMessages {
+  /** Shown when the file extension/MIME type isn't accepted. */
+  invalidType: string;
+  /** Shown when the file exceeds `maxSizeMb`; receives the limit for interpolation. */
+  tooLarge: (maxSizeMb: number) => string;
+}
+
+/**
+ * Drag-and-drop + file-picker state for a single-file upload zone.
+ *
+ * Stays locale-agnostic on purpose: pass `messages` (typically built from
+ * `useLocale().t.validation` at the call site) rather than calling
+ * `useLocale` here, so this hook remains reusable outside any i18n context.
+ */
 export function useFileDrop(options?: {
   accept?: string[];
   maxSizeMb?: number;
   onFile?: (file: File) => void;
+  messages?: FileDropMessages;
 }): FileDropState {
   const accept = options?.accept ?? DEFAULT_ACCEPT;
   const maxSizeMb = options?.maxSizeMb ?? 8;
+  const messages = options?.messages ?? DEFAULT_MESSAGES;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,13 +72,13 @@ export function useFileDrop(options?: {
         accept.includes(next.type) ||
         next.type === "" ||
         next.type === "application/octet-stream";
-      if (!okExt && !okMime) return "Please upload a PDF or DOCX resume.";
+      if (!okExt && !okMime) return messages.invalidType;
       if (next.size > maxSizeMb * 1024 * 1024) {
-        return `File must be under ${maxSizeMb}MB.`;
+        return messages.tooLarge(maxSizeMb);
       }
       return null;
     },
-    [accept, maxSizeMb]
+    [accept, maxSizeMb, messages]
   );
 
   const takeFile = useCallback(

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ResumeAnalysis } from "@/types/candidate";
+import { useLocale } from "@/lib/i18n/hooks";
 import { Panel, PanelHeader } from "./panel";
 
 export function StrengthsWeaknesses({
@@ -10,10 +11,13 @@ export function StrengthsWeaknesses({
   analysis: ResumeAnalysis;
   delay?: number;
 }) {
+  const { t } = useLocale();
+  const panel = t.recruiter.panels;
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Panel delay={delay}>
-        <PanelHeader title="Strengths" subtitle="Resume + interview signals" />
+        <PanelHeader title={panel.strengths.title} subtitle={panel.strengths.subtitle} />
         <ul className="space-y-2.5">
           {analysis.topStrengths.map((item) => (
             <li
@@ -26,7 +30,7 @@ export function StrengthsWeaknesses({
         </ul>
       </Panel>
       <Panel delay={delay + 0.04}>
-        <PanelHeader title="Weaknesses" subtitle="Gaps and stretch areas" />
+        <PanelHeader title={panel.weaknesses.title} subtitle={panel.weaknesses.subtitle} />
         <ul className="space-y-2.5">
           {analysis.weaknesses.map((item) => (
             <li
@@ -40,7 +44,7 @@ export function StrengthsWeaknesses({
         {analysis.missingSkills.length > 0 ? (
           <div className="mt-4">
             <p className="mb-2 text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
-              Missing skills
+              {panel.weaknesses.missingSkills}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {analysis.missingSkills.map((skill) => (

@@ -1,0 +1,15 @@
+export const validation = {
+  fullNameRequired: "Enter your full name",
+  emailInvalid: "Enter a valid email",
+  phoneRequired: "Enter a phone number",
+  countryRequired: "Enter your country",
+  roleRequired: "Select a role",
+  experienceRequired: "Select experience",
+  linkedInUrlInvalid: "Enter a valid LinkedIn URL",
+  urlInvalid: "Enter a valid URL",
+  resumeRequired: "Upload a PDF or DOCX resume",
+  interestReasonTooShort: "Please share at least a short paragraph",
+  strongFitReasonTooShort: "Please share at least a short paragraph",
+  fileTypeInvalid: "Please upload a PDF or DOCX resume.",
+  fileTooLarge: "File must be under {maxSizeMb}MB.",
+};

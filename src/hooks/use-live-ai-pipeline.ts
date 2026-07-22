@@ -8,8 +8,10 @@ import {
   generateQuestionsApi,
   parseResumeApi,
   extractResumeText,
+  type TalentApiErrorMessages,
 } from "@/lib/ai/api-client";
 import { buildCandidateSession } from "@/lib/candidate/build-session";
+import type { AILocaleContext } from "@/lib/i18n/types";
 import type { CandidateSession } from "@/types/dashboard";
 
 export const AI_PIPELINE_STAGES = [
@@ -25,7 +27,24 @@ export interface LiveAiPipelineInput {
   file?: File | null;
   resumeText?: string;
   linkedInUrl?: string | null;
+  /**
+   * Snapshotted at the start of `run()`. Mid-flight locale switches by the
+   * caller do not affect a request already in progress.
+   */
+  locale?: AILocaleContext;
 }
+
+export interface LiveAiPipelineMessages extends TalentApiErrorMessages {
+  noResumeText: string;
+}
+
+const DEFAULT_PIPELINE_MESSAGES: LiveAiPipelineMessages = {
+  missingApiKey:
+    "Gemini API key is not configured. Add GEMINI_API_KEY to .env.local and restart the dev server.",
+  rateLimited: "AI rate limit reached. Wait a moment and try again.",
+  generic: "Something went wrong while running the AI pipeline.",
+  noResumeText: "No resume text available to analyze.",
+};
 
 export interface LiveAiPipelineState {
   active: boolean;
@@ -42,9 +61,13 @@ const STAGE_PROGRESS = [8, 22, 42, 62, 82, 100] as const;
 
 export function useLiveAiPipeline(options?: {
   onComplete?: (session: CandidateSession) => void;
+  messages?: LiveAiPipelineMessages;
 }): LiveAiPipelineState {
   const onCompleteRef = useRef(options?.onComplete);
   onCompleteRef.current = options?.onComplete;
+  const messages = options?.messages ?? DEFAULT_PIPELINE_MESSAGES;
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   const [active, setActive] = useState(false);
   const [done, setDone] = useState(false);
@@ -61,6 +84,10 @@ export function useLiveAiPipeline(options?: {
   }, []);
 
   const run = useCallback(async (input: LiveAiPipelineInput) => {
+    // Snapshot once so a locale switch that happens while this run is in
+    // flight cannot mutate an already-issued request.
+    const locale = input.locale;
+
     setActive(true);
     setDone(false);
     setError(null);
@@ -81,26 +108,26 @@ export function useLiveAiPipeline(options?: {
       }
 
       if (!resumeText) {
-        throw new Error("No resume text available to analyze.");
+        throw new Error(messagesRef.current.noResumeText);
       }
 
       const linkedInUrl = input.linkedInUrl?.trim() || null;
 
       setStageIndex(1);
       setProgress(STAGE_PROGRESS[1]);
-      const resume = await parseResumeApi({ resumeText, linkedInUrl });
+      const resume = await parseResumeApi({ resumeText, linkedInUrl, locale });
 
       setStageIndex(2);
       setProgress(STAGE_PROGRESS[2]);
-      const analysis = await analyzeResumeApi({ resume, linkedInUrl });
+      const analysis = await analyzeResumeApi({ resume, linkedInUrl, locale });
 
       setStageIndex(3);
       setProgress(STAGE_PROGRESS[3]);
-      const fit = await generateFitApi({ resume, analysis });
+      const fit = await generateFitApi({ resume, analysis, locale });
 
       setStageIndex(4);
       setProgress(STAGE_PROGRESS[4]);
-      const questions = await generateQuestionsApi({ resume, analysis });
+      const questions = await generateQuestionsApi({ resume, analysis, locale });
 
       setStageIndex(5);
       setProgress(STAGE_PROGRESS[5]);
@@ -110,6 +137,7 @@ export function useLiveAiPipeline(options?: {
         fit,
         questions,
         linkedInUrl,
+        locale,
       });
 
       setProgress(100);
@@ -118,7 +146,7 @@ export function useLiveAiPipeline(options?: {
       onCompleteRef.current?.(session);
       return session;
     } catch (err) {
-      const message = formatTalentApiError(err);
+      const message = formatTalentApiError(err, messagesRef.current);
       setError(message);
       setActive(false);
       throw err;

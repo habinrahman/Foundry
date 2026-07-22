@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion";
 import type { TimelineEvent } from "@/types/dashboard";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Panel, PanelHeader } from "./panel";
 
 const kindColor: Record<TimelineEvent["kind"], string> = {
@@ -20,10 +22,22 @@ export function CandidateTimeline({
   events: TimelineEvent[];
   delay?: number;
 }) {
+  const { t } = useLocale();
+  const panel = t.recruiter.panels.timeline;
+
+  if (events.length === 0) {
+    return (
+      <Panel delay={delay}>
+        <PanelHeader title={panel.title} subtitle={panel.subtitle} />
+        <EmptyState title={panel.empty.title} description={panel.empty.description} />
+      </Panel>
+    );
+  }
+
   return (
     <Panel delay={delay}>
-      <PanelHeader title="Timeline" subtitle="Career + interview arc" />
-      <ol className="relative space-y-5 border-l border-[var(--border-strong)] ml-2 pl-6">
+      <PanelHeader title={panel.title} subtitle={panel.subtitle} />
+      <ol className="relative ms-2 space-y-5 border-s border-[var(--border-strong)] ps-6">
         {events.map((event, index) => (
           <motion.li
             key={event.id}
@@ -34,7 +48,7 @@ export function CandidateTimeline({
           >
             <span
               className={cn(
-                "absolute -left-[1.9rem] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-[var(--surface)]",
+                "absolute -start-[1.9rem] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-[var(--surface)]",
                 kindColor[event.kind]
               )}
             />

@@ -152,6 +152,12 @@ p {
   line-height: 1.65;
 }
 
+/* Arabic locale typography — IBM Plex Sans Arabic for headings and body. */
+html[lang="ar"] body,
+html[lang="ar"] :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-arabic), var(--font-body), sans-serif;
+}
+
 code,
 pre,
 kbd,

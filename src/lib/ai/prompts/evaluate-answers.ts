@@ -1,20 +1,22 @@
+import type { AILocaleContext } from "@/lib/i18n/types";
 import type {
   CandidateAnswer,
   ParsedResume,
   TechnicalQuestion,
 } from "@/types/candidate";
 import type { AIMessage } from "../provider/types";
-import { formatRoleBrief, TALENT_AI_SYSTEM } from "./system";
+import { buildTalentAiSystem, formatRoleBrief } from "./system";
 
 export function buildEvaluateAnswersMessages(input: {
   resume: ParsedResume;
   questions: TechnicalQuestion[];
   answers: CandidateAnswer[];
+  locale: AILocaleContext;
 }): AIMessage[] {
   return [
     {
       role: "system",
-      content: `${TALENT_AI_SYSTEM}
+      content: `${buildTalentAiSystem(input.locale)}
 
 Task: EVALUATE_CANDIDATE_ANSWERS
 Evaluate interview answers for the AI Product Engineer role.

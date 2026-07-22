@@ -18,6 +18,8 @@ Product tour assets for the root README. Prefer **light mode**, **1440×900** vi
 | `recruiter-*.png` | Foundry Hire |
 | `ats-analysis.png` / `skills-matrix.png` / `radar-chart.png` | Dashboard panels |
 | `interview-questions.png` / `hiring-recommendation.png` | Interview + decision |
+| `i18n-careers-en.png` / `i18n-careers-ar.png` | Careers EN/AR (RTL) |
+| `i18n-recruiter-en.png` / `i18n-recruiter-ar.png` | Foundry Hire EN/AR (RTL) |
 
 ## GIFs (optional)
 
@@ -33,4 +35,7 @@ Place short loops in `gifs/`:
 ```bash
 # App running on BASE_URL (default http://localhost:8600)
 node docs/scripts/capture-screenshots.mjs
+
+# Bilingual EN/AR pairs (Careers + Foundry recruiter)
+node docs/scripts/capture-i18n-screenshots.mjs
 ```

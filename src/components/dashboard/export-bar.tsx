@@ -15,10 +15,14 @@ import {
   exportCandidateMarkdown,
   exportCandidatePdf,
 } from "@/lib/export/candidate-export";
+import { formatMessage } from "@/lib/i18n/format-message";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 import { useCandidateStore } from "@/store/candidate-store";
 
 export function ExportBar({ className }: { className?: string }) {
+  const { t } = useLocale();
+  const catalog = t.recruiter.export;
   const { candidate, resetToDemo } = useCandidateStore();
   const [toast, setToast] = useState<string | null>(null);
 
@@ -29,39 +33,39 @@ export function ExportBar({ className }: { className?: string }) {
 
   const actions = [
     {
-      label: "PDF",
-      hint: "Print-ready report",
+      label: catalog.pdf.label,
+      hint: catalog.pdf.hint,
       icon: Download,
       onClick: () => {
         exportCandidatePdf(candidate);
-        flash("Opening print dialog");
+        flash(catalog.pdf.toast);
       },
     },
     {
-      label: "Markdown",
-      hint: "Shareable write-up",
+      label: catalog.markdown.label,
+      hint: catalog.markdown.hint,
       icon: FileText,
       onClick: () => {
         exportCandidateMarkdown(candidate);
-        flash("Markdown downloaded");
+        flash(catalog.markdown.toast);
       },
     },
     {
-      label: "JSON",
-      hint: "Full session payload",
+      label: catalog.json.label,
+      hint: catalog.json.hint,
       icon: FileJson,
       onClick: () => {
         exportCandidateJson(candidate);
-        flash("JSON downloaded");
+        flash(catalog.json.toast);
       },
     },
     {
-      label: "CSV",
-      hint: "Spreadsheet-friendly",
+      label: catalog.csv.label,
+      hint: catalog.csv.hint,
       icon: FileSpreadsheet,
       onClick: () => {
         exportCandidateCsv(candidate);
-        flash("CSV downloaded");
+        flash(catalog.csv.toast);
       },
     },
   ] as const;
@@ -71,14 +75,17 @@ export function ExportBar({ className }: { className?: string }) {
       <div
         className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1 shadow-[var(--shadow)]"
         role="group"
-        aria-label="Export hiring report"
+        aria-label={catalog.groupLabel}
       >
         {actions.map((action) => (
           <button
             key={action.label}
             type="button"
             title={action.hint}
-            aria-label={`Export ${action.label}: ${action.hint}`}
+            aria-label={formatMessage(catalog.actionAriaLabel, {
+              label: action.label,
+              hint: action.hint,
+            })}
             onClick={action.onClick}
             className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-[var(--foreground)] transition hover:bg-[var(--accent-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
           >
@@ -91,13 +98,13 @@ export function ExportBar({ className }: { className?: string }) {
           type="button"
           onClick={() => {
             resetToDemo();
-            flash("Demo session reset");
+            flash(catalog.resetToast);
           }}
           className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs text-[var(--muted)] transition hover:bg-[var(--background)] hover:text-[var(--foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-          aria-label="Reset demo candidate"
+          aria-label={catalog.resetAria}
         >
           <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-          Reset
+          {catalog.reset}
         </button>
       </div>
       <div

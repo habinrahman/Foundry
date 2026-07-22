@@ -19,6 +19,7 @@ export async function POST(request: Request) {
         talentAI.streamFitRationale({
           resume: body.resume,
           analysis: body.analysis,
+          locale: body.locale,
         })
       );
     }
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
     const data = await talentAI.generateFitRationale({
       resume: body.resume,
       analysis: body.analysis,
+      locale: body.locale,
     });
     return jsonOk(data);
   } catch (error) {

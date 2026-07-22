@@ -7,7 +7,11 @@ export {
   type KeyCombo,
 } from "./use-keyboard-shortcut";
 export { useTypewriter } from "./use-typewriter";
-export { useFileDrop, type FileDropState } from "./use-file-drop";
+export {
+  useFileDrop,
+  type FileDropState,
+  type FileDropMessages,
+} from "./use-file-drop";
 export { useOptimisticRecommendation } from "./use-optimistic-recommendation";
 export {
   CommandPaletteProvider,
@@ -17,6 +21,7 @@ export {
   useLiveAiPipeline,
   AI_PIPELINE_STAGES,
   type LiveAiPipelineState,
+  type LiveAiPipelineMessages,
 } from "./use-live-ai-pipeline";
 export { useAiPipeline, type AiPipelineState } from "./use-ai-pipeline";
 export { useCountUp } from "./use-count-up";

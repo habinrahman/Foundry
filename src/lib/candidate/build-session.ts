@@ -1,4 +1,6 @@
 import { TARGET_ROLE } from "@/constants/role";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locale";
+import type { AILocaleContext } from "@/lib/i18n/types";
 import type {
   FitRationale,
   ParsedResume,
@@ -156,6 +158,8 @@ export function buildCandidateSession(input: {
   fit: FitRationale;
   questions: TechnicalQuestionSet;
   linkedInUrl?: string | null;
+  /** Locale used to generate `analysis`/`fit`/`questions`. Defaults to `en`. */
+  locale?: AILocaleContext;
 }): CandidateSession {
   const linkedin =
     input.linkedInUrl?.trim() || input.resume.linkedin || null;
@@ -181,5 +185,6 @@ export function buildCandidateSession(input: {
     skillMatrix: buildSkillMatrix(resume, input.analysis),
     radar: buildRadar(input.analysis, input.fit),
     timeline: buildTimeline(resume, input.questions),
+    analysisLanguage: input.locale?.code ?? DEFAULT_LOCALE,
   };
 }

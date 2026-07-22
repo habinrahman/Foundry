@@ -2,15 +2,8 @@
 
 import { Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/lib/i18n/hooks";
 import { usePrefersReducedMotion } from "@/hooks";
-
-export const RECRUITER_AI_STAGES = [
-  "Parsing resume…",
-  "Extracting skills…",
-  "Evaluating experience…",
-  "Generating interview questions…",
-  "Complete",
-] as const;
 
 export function AiProcessingPanel({
   active,
@@ -21,7 +14,9 @@ export function AiProcessingPanel({
   stageIndex: number;
   className?: string;
 }) {
+  const { t } = useLocale();
   const reduced = usePrefersReducedMotion();
+  const stages = t.ai.stages.recruiterProcessing;
 
   if (!active) return null;
 
@@ -36,17 +31,17 @@ export function AiProcessingPanel({
       aria-busy="true"
     >
       <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
-        AI pipeline
+        {t.ai.pipeline.heading}
       </p>
       <p className="mt-1 font-heading text-lg font-semibold tracking-tight">
-        Preparing hiring intelligence
+        {t.ai.pipeline.preparing}
       </p>
       <ol className="mt-5 space-y-2.5">
-        {RECRUITER_AI_STAGES.map((label, index) => {
-          const done = index < stageIndex || (index === stageIndex && label === "Complete");
-          const current = index === stageIndex && label !== "Complete";
-          const completeCurrent =
-            label === "Complete" && stageIndex >= RECRUITER_AI_STAGES.length - 1;
+        {stages.map((label, index) => {
+          const isLastStage = index === stages.length - 1;
+          const done = index < stageIndex || (index === stageIndex && isLastStage);
+          const current = index === stageIndex && !isLastStage;
+          const completeCurrent = isLastStage && stageIndex >= stages.length - 1;
 
           return (
             <li
@@ -90,16 +85,16 @@ export function AiProcessingPanel({
 /** Runs a short staged animation; resolves when complete. Respects reduced motion. */
 export async function runAiStageAnimation(
   onStage: (index: number) => void,
-  reducedMotion: boolean
+  reducedMotion: boolean,
+  stageCount: number
 ): Promise<void> {
-  const stages = RECRUITER_AI_STAGES.length;
   if (reducedMotion) {
-    onStage(stages - 1);
+    onStage(stageCount - 1);
     return;
   }
-  for (let i = 0; i < stages; i++) {
+  for (let i = 0; i < stageCount; i++) {
     onStage(i);
-    const delay = i === stages - 1 ? 280 : 320;
+    const delay = i === stageCount - 1 ? 280 : 320;
     await new Promise((r) => setTimeout(r, delay));
   }
 }

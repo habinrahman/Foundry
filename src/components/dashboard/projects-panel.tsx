@@ -2,6 +2,9 @@
 
 import { ExternalLink } from "lucide-react";
 import type { ProjectEntry } from "@/types/candidate";
+import { formatMessage } from "@/lib/i18n/format-message";
+import { useLocale } from "@/lib/i18n/hooks";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Panel, PanelHeader } from "./panel";
 
 export function ProjectsPanel({
@@ -11,9 +14,21 @@ export function ProjectsPanel({
   projects: ProjectEntry[];
   delay?: number;
 }) {
+  const { t } = useLocale();
+  const panel = t.recruiter.panels.projects;
+
+  if (projects.length === 0) {
+    return (
+      <Panel delay={delay}>
+        <PanelHeader title={panel.title} subtitle={panel.subtitle} />
+        <EmptyState title={panel.empty.title} description={panel.empty.description} />
+      </Panel>
+    );
+  }
+
   return (
     <Panel delay={delay}>
-      <PanelHeader title="Projects" subtitle="Signal from shipped work" />
+      <PanelHeader title={panel.title} subtitle={panel.subtitle} />
       <div className="space-y-4">
         {projects.map((project) => (
           <article
@@ -30,7 +45,7 @@ export function ProjectsPanel({
                   target="_blank"
                   rel="noreferrer"
                   className="text-[var(--muted)] transition hover:text-[var(--accent)]"
-                  aria-label={`Open ${project.name}`}
+                  aria-label={formatMessage(panel.openAria, { name: project.name })}
                 >
                   <ExternalLink className="h-4 w-4" />
                 </a>
@@ -42,7 +57,7 @@ export function ProjectsPanel({
             <ul className="mt-3 space-y-1">
               {project.highlights.map((item) => (
                 <li key={item} className="text-xs text-[var(--foreground)]/85">
-                  <span className="mr-2 text-[var(--accent)]">▸</span>
+                  <span className="me-2 text-[var(--accent)]">▸</span>
                   {item}
                 </li>
               ))}

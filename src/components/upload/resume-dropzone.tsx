@@ -3,6 +3,8 @@
 import { UploadIllustration } from "@/components/illustrations/orbit";
 import { Button } from "@/components/ui/button";
 import { useFileDrop } from "@/hooks";
+import { formatMessage } from "@/lib/i18n/format-message";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 
 export function ResumeDropzone({
@@ -12,7 +14,15 @@ export function ResumeDropzone({
   onFile?: (file: File) => void;
   className?: string;
 }) {
-  const drop = useFileDrop({ onFile });
+  const { t } = useLocale();
+  const drop = useFileDrop({
+    onFile,
+    messages: {
+      invalidType: t.validation.fileTypeInvalid,
+      tooLarge: (maxSizeMb) =>
+        formatMessage(t.validation.fileTooLarge, { maxSizeMb }),
+    },
+  });
 
   return (
     <div className={cn("w-full", className)}>
@@ -20,7 +30,7 @@ export function ResumeDropzone({
         {...drop.bind}
         role="button"
         tabIndex={0}
-        aria-label="Upload resume. Drag and drop a PDF or DOCX file, or press Enter to browse."
+        aria-label={t.common.resumeDropzone.ariaLabel}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
@@ -40,11 +50,10 @@ export function ResumeDropzone({
           <UploadIllustration />
         </div>
         <p className="mt-4 font-heading text-xl">
-          Drop your resume
+          {t.common.resumeDropzone.title}
         </p>
         <p className="mt-2 max-w-sm text-sm text-[var(--muted)]">
-          PDF or DOCX · up to 8MB. Text is extracted server-side and sent to
-          Gemini for live analysis.
+          {t.common.resumeDropzone.description}
         </p>
         <Button
           variant="secondary"
@@ -55,11 +64,11 @@ export function ResumeDropzone({
             drop.openFilePicker();
           }}
         >
-          Browse files
+          {t.common.resumeDropzone.browse}
         </Button>
         {drop.file ? (
           <p className="mt-4 text-xs text-[var(--accent)]" aria-live="polite">
-            Selected: {drop.file.name}
+            {t.common.resumeDropzone.selectedPrefix}: {drop.file.name}
           </p>
         ) : null}
         {drop.error ? (

@@ -9,6 +9,7 @@ import {
   Phone,
 } from "lucide-react";
 import type { ParsedResume, ResumeAnalysis } from "@/types/candidate";
+import { useLocale } from "@/lib/i18n/hooks";
 import { Panel, PanelHeader } from "./panel";
 
 export function ResumeSummary({
@@ -20,11 +21,14 @@ export function ResumeSummary({
   analysis: ResumeAnalysis;
   delay?: number;
 }) {
+  const { t } = useLocale();
+  const panel = t.recruiter.panels.resumeSummary;
+
   return (
     <Panel delay={delay}>
       <PanelHeader
-        title="Resume Summary"
-        subtitle={resume.name ?? "Candidate"}
+        title={panel.title}
+        subtitle={resume.name ?? panel.candidateFallback}
       />
       <p className="text-sm leading-relaxed text-[var(--foreground)]/90">
         {analysis.professionalSummary}
@@ -39,21 +43,21 @@ export function ResumeSummary({
         {resume.linkedin ? (
           <Meta
             icon={<Link2 className="h-3.5 w-3.5" />}
-            label="LinkedIn"
+            label={panel.linkedin}
             href={resume.linkedin}
           />
         ) : null}
         {resume.github ? (
           <Meta
             icon={<Code2 className="h-3.5 w-3.5" />}
-            label="GitHub"
+            label={panel.github}
             href={resume.github}
           />
         ) : null}
         {resume.portfolio ? (
           <Meta
             icon={<Globe className="h-3.5 w-3.5" />}
-            label="Portfolio"
+            label={panel.portfolio}
             href={resume.portfolio}
           />
         ) : null}

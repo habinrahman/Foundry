@@ -5,8 +5,8 @@ export const CAREERS_DESCRIPTION =
   "Build AI that transforms manufacturing. Explore open engineering roles and apply to join Tamm.";
 
 export const CAREERS_NAV = [
-  { href: "/#why", label: "About" },
-  { href: "/#engineering", label: "Engineering" },
-  { href: "/careers", label: "Open Roles" },
-  { href: "/apply", label: "Apply" },
+  { href: "/#why", labelKey: "about" },
+  { href: "/#philosophy", labelKey: "engineering" },
+  { href: "/careers", labelKey: "openRoles" },
+  { href: "/apply", labelKey: "apply" },
 ] as const;

@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/hooks";
+
 type Metric = {
   label: string;
   value: string;
@@ -7,9 +9,11 @@ type Metric = {
 };
 
 export function DashboardMetrics({ metrics }: { metrics: Metric[] }) {
+  const { t } = useLocale();
+
   return (
     <section
-      aria-label="Hiring operations metrics"
+      aria-label={t.recruiter.dashboard.metricsAriaLabel}
       className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
     >
       {metrics.map((metric) => (

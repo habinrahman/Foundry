@@ -1,7 +1,7 @@
 "use client";
 
 import { useCountUp } from "@/hooks/use-count-up";
-import { formatScore } from "@/lib/utils";
+import { useLocale } from "@/lib/i18n/hooks";
 
 export function AnimatedScore({
   value,
@@ -10,6 +10,9 @@ export function AnimatedScore({
   value: number;
   className?: string;
 }) {
+  const { formatNumber } = useLocale();
   const current = useCountUp(value);
-  return <span className={className}>{formatScore(current)}</span>;
+  return (
+    <span className={className}>{formatNumber(Math.round(current))}</span>
+  );
 }

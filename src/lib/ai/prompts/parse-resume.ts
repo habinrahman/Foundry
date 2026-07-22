@@ -1,14 +1,16 @@
+import type { AILocaleContext } from "@/lib/i18n/types";
 import type { AIMessage } from "../provider/types";
-import { TALENT_AI_SYSTEM } from "./system";
+import { buildTalentAiSystem } from "./system";
 
 export function buildParseResumeMessages(input: {
   resumeText: string;
   linkedInUrl?: string | null;
+  locale: AILocaleContext;
 }): AIMessage[] {
   return [
     {
       role: "system",
-      content: `${TALENT_AI_SYSTEM}
+      content: `${buildTalentAiSystem(input.locale)}
 
 Task: PARSE_RESUME
 Extract a structured candidate profile from resume text.

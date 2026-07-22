@@ -4,12 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useMemo, useRef } from "react";
-import {
-  FileUp,
-  Home,
-  LayoutDashboard,
-  Search,
-} from "lucide-react";
+import { FileUp, LayoutDashboard, Search } from "lucide-react";
 import { CommandPalette } from "@/components/command/command-palette";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -51,13 +46,6 @@ function ShellChrome({ children }: { children: React.ReactNode }) {
         },
       },
       {
-        combo: { key: "h" },
-        handler: () => {
-          if (open || chordRef.current !== "g") return;
-          router.push("/");
-        },
-      },
-      {
         combo: { key: "d" },
         handler: () => {
           if (open || chordRef.current !== "g") return;
@@ -71,6 +59,13 @@ function ShellChrome({ children }: { children: React.ReactNode }) {
           router.push("/candidate");
         },
       },
+      {
+        combo: { key: "h" },
+        handler: () => {
+          if (open || chordRef.current !== "g") return;
+          router.push("/recruiter");
+        },
+      },
     ],
     [open, resolvedTheme, router, setOpen, setTheme, toggle]
   );
@@ -78,7 +73,6 @@ function ShellChrome({ children }: { children: React.ReactNode }) {
   useKeyboardShortcuts(bindings);
 
   const nav = [
-    { href: "/", label: "Home", icon: Home },
     { href: "/candidate", label: "Talk", icon: FileUp },
     { href: "/recruiter", label: "Hire", icon: LayoutDashboard },
   ] as const;
@@ -96,7 +90,7 @@ function ShellChrome({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-8">
             <Link
-              href="/"
+              href="/recruiter"
               className="font-heading text-lg tracking-tight transition hover:opacity-80"
             >
               {APP_NAME}
@@ -156,7 +150,7 @@ function ShellChrome({ children }: { children: React.ReactNode }) {
         aria-label="Mobile"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_88%,transparent)] backdrop-blur-xl md:hidden"
       >
-        <ul className="mx-auto grid max-w-lg grid-cols-3 px-2 py-2">
+        <ul className="mx-auto grid max-w-lg grid-cols-2 px-2 py-2">
           {nav.map((item) => {
             const active = pathname === item.href;
             return (

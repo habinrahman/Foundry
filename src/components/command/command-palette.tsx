@@ -9,7 +9,6 @@ import {
   RotateCcw,
   Search,
   Sun,
-  Home,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -45,14 +44,6 @@ export function CommandPalette() {
   const commands = useMemo<CommandItem[]>(
     () => [
       {
-        id: "home",
-        label: "Go to home",
-        hint: "G H",
-        group: "Navigate",
-        icon: Home,
-        run: () => router.push("/"),
-      },
-      {
         id: "candidate",
         label: "Candidate upload",
         hint: "G U",
@@ -63,7 +54,7 @@ export function CommandPalette() {
       {
         id: "recruiter",
         label: "Recruiter dashboard",
-        hint: "G D",
+        hint: "G D · G H",
         group: "Navigate",
         icon: LayoutDashboard,
         run: () => router.push("/recruiter"),

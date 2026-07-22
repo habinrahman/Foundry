@@ -1,8 +1,8 @@
-# Foundry — AI Hiring Intelligence Platform
+# Foundry
 
-End-to-end AI hiring workflow consisting of a **premium candidate application experience** and an **internal recruiter intelligence platform**.
+**AI Hiring Intelligence Platform** — a premium candidate careers experience paired with an internal recruiter workspace that turns resumes into structured hiring evidence.
 
-Candidates apply through Tamm Careers. Recruiters review AI-generated insights in Foundry — resume parsing, skill extraction, ATS scoring, candidate summaries, interview questions, and hiring recommendations.
+Candidates apply through **Tamm Careers**. Recruiters review AI-generated insights in **Foundry** — resume parsing, skill extraction, ATS scoring, candidate summaries, interview questions, and hiring recommendations.
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
@@ -13,50 +13,52 @@ Candidates apply through Tamm Careers. Recruiters review AI-generated insights i
 
 ---
 
+> **Portfolio demo**  
+> This is an independent portfolio project demonstrating an AI Hiring Intelligence Platform.  
+> It explores how a premium candidate application experience can integrate with an AI-powered recruiter workspace.  
+> It is not affiliated with, endorsed by, or an official product of Tamm or any other company.
+
+---
+
 ## Table of contents
 
-- [Why I built this](#why-i-built-this)
-- [Overview](#overview)
 - [Architecture](#architecture)
-- [Candidate journey](#candidate-journey)
-- [Recruiter journey](#recruiter-journey)
-- [AI pipeline](#ai-pipeline)
+- [Product Tour](#product-tour)
+- [Why I built this](#why-i-built-this)
+- [Product Philosophy](#product-philosophy)
+- [User journeys](#user-journeys)
+- [Overview](#overview)
 - [Features](#features)
 - [System design](#system-design)
 - [Tech stack](#tech-stack)
 - [Screenshots](#screenshots)
 - [Quick start](#quick-start)
+- [Roadmap](#roadmap)
 - [Environment variables](#environment-variables)
 - [API reference](#api-reference)
-- [Roadmap](#roadmap)
+- [Repository highlights](#repository-highlights)
+- [Project highlights](#project-highlights)
+- [Product surfaces (detail)](#product-surfaces-detail)
+- [Architecture (detail)](#architecture-detail)
+- [Demo vs live AI](#demo-vs-live-ai)
+- [Development workflow](#development-workflow)
+- [Environment variables (detail)](#environment-variables-detail)
+- [Build & scripts](#build--scripts)
+- [API reference (detail)](#api-reference-detail)
+- [AI pipeline & prompt engineering](#ai-pipeline--prompt-engineering)
+- [State management & data flow](#state-management--data-flow)
+- [Exports & keyboard shortcuts](#exports--keyboard-shortcuts)
+- [Security & performance](#security--performance)
+- [Accessibility & SEO](#accessibility--seo)
+- [Deployment](#deployment)
+- [Engineering decisions](#engineering-decisions)
+- [Known limitations](#known-limitations)
+- [Live AI flow (recruiter)](#live-ai-flow-recruiter)
+- [Troubleshooting](#troubleshooting)
+- [Repository metadata](#repository-metadata)
+- [Further reading](#further-reading)
 - [Author](#author)
 - [License](#license)
-
----
-
-## Why I built this
-
-Many hiring processes still rely on generic forms that collect information but don't help recruiters make better decisions. Foundry explores a different approach: a premium candidate application experience paired with an AI-powered recruiter workspace that transforms resumes into structured, actionable hiring insights.
-
----
-
-## Overview
-
-**Foundry** is an AI Hiring Intelligence Platform. It is **not** a traditional ATS.
-
-It demonstrates a complete hiring narrative:
-
-1. **Public careers** — candidates discover roles and submit a premium multi-step application.
-2. **Application intake** — validated submissions land in a repository-backed applications API.
-3. **Recruiter intelligence** — Foundry opens the application, runs resume intelligence, and presents an executive hiring report.
-
-| Audience | Surfaces | What they see |
-| --- | --- | --- |
-| Candidates | `/`, `/careers`, `/apply`, `/application/success` | Tamm Careers only — never Foundry chrome |
-| Recruiters | `/recruiter` | Foundry applications inbox + AI hiring report |
-| Internal demo | `/candidate` | Optional Talk flow for AI pipeline demos |
-
-Demo persistence is **in-memory** (no auth, no database). Swapping to PostgreSQL/Supabase is designed as a repository replacement.
 
 ---
 
@@ -142,61 +144,312 @@ Full folder map: **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
 
 ---
 
-## Candidate journey
+## Product Tour
 
-```text
-Tamm Careers
-   ↓
-Browse roles
-   ↓
-Role details
-   ↓
-Premium application (personal → position → profile → resume → questions)
-   ↓
-Review & edit
-   ↓
-Application submitted
+Screenshots live in [`docs/screenshots/`](./docs/screenshots/). Captured at 1440×900 (2×) in light mode unless noted.
+
+> **Motion (optional)**  
+> Short GIFs can be dropped into `docs/screenshots/gifs/` as `hero-animation.gif`, `application-flow.gif`, `recruiter-dashboard.gif`, and `ai-processing-stages.gif`. Static frames below cover the same surfaces today.
+
+### Landing Page
+
+<p align="center">
+  <img src="docs/screenshots/landing-page.png" alt="Tamm Careers landing page hero with hiring intelligence visual" width="900"/>
+</p>
+
+<p align="center"><em>Brand-first careers hero — manufacturing AI mission, dual CTAs, and a Resume → Decision signal graphic.</em></p>
+
+---
+
+### Why Tamm
+
+<p align="center">
+  <img src="docs/screenshots/why-tamm.png" alt="Why Tamm section on the careers landing page" width="900"/>
+</p>
+
+<p align="center"><em>Mission and product narrative for candidates evaluating the company.</em></p>
+
+---
+
+### Engineering Culture
+
+<p align="center">
+  <img src="docs/screenshots/engineering-culture.png" alt="Engineering culture section" width="900"/>
+</p>
+
+<p align="center"><em>How the engineering org works — craft, ownership, and shipping standards.</em></p>
+
+---
+
+### Hiring Process
+
+<p align="center">
+  <img src="docs/screenshots/hiring-process.png" alt="Hiring process steps for candidates" width="900"/>
+</p>
+
+<p align="center"><em>Transparent process steps so candidates know what happens after they apply.</em></p>
+
+---
+
+### Open Roles
+
+<p align="center">
+  <img src="docs/screenshots/open-roles.png" alt="Open engineering roles listing" width="900"/>
+</p>
+
+<p align="center"><em>Role catalog with location, seniority, and clear paths into the application flow.</em></p>
+
+<p align="center">
+  <img src="docs/screenshots/open-roles-section.png" alt="Open roles section on the landing page" width="900"/>
+</p>
+
+<p align="center"><em>Landing-page roles section — same catalog, embedded in the careers story.</em></p>
+
+---
+
+### Job Details Page
+
+<p align="center">
+  <img src="docs/screenshots/job-details.png" alt="AI Product Engineer role details page" width="900"/>
+</p>
+
+<p align="center"><em>Role detail for AI Product Engineer — responsibilities, requirements, and apply CTA.</em></p>
+
+---
+
+### Multi-Step Application
+
+<p align="center">
+  <img src="docs/screenshots/apply-step-1.png" alt="Application step — personal information" width="900"/>
+</p>
+
+<p align="center"><em>Step 1 — Personal information with progress across the apply wizard.</em></p>
+
+<p align="center">
+  <img src="docs/screenshots/apply-step-2.png" alt="Application step — position selection" width="900"/>
+</p>
+
+<p align="center"><em>Step 2 — Position selection tied to the careers catalog.</em></p>
+
+<p align="center">
+  <img src="docs/screenshots/apply-step-3.png" alt="Application step — professional profile" width="900"/>
+</p>
+
+<p align="center"><em>Step 3 — Professional profile (LinkedIn, experience, links).</em></p>
+
+<p align="center">
+  <img src="docs/screenshots/apply-step-4.png" alt="Application step — resume upload" width="900"/>
+</p>
+
+<p align="center"><em>Step 4 — Resume upload with client-side extraction toward structured intake.</em></p>
+
+---
+
+### Review Application
+
+<p align="center">
+  <img src="docs/screenshots/review-application.png" alt="Application review step before submit" width="900"/>
+</p>
+
+<p align="center"><em>Review before submit — candidates can jump back and edit any step.</em></p>
+
+---
+
+### Application Submitted
+
+<p align="center">
+  <img src="docs/screenshots/application-submitted.png" alt="Application success page with hiring progress timeline" width="900"/>
+</p>
+
+<p align="center"><em>Success state with application ID and a hiring-progress timeline. Candidate journey ends here.</em></p>
+
+---
+
+### Recruiter Inbox
+
+<p align="center">
+  <img src="docs/screenshots/recruiter-dashboard.png" alt="Foundry recruiter inbox and metrics strip" width="900"/>
+</p>
+
+<p align="center"><em>Foundry Hire — operational metrics, applications inbox, and the start of the hiring report.</em></p>
+
+---
+
+### AI Processing Animation
+
+<p align="center">
+  <img src="docs/screenshots/ai-processing.png" alt="Foundry AI processing stages on the recruiter dashboard" width="900"/>
+</p>
+
+<p align="center"><em>Stage-aware processing when a recruiter opens an application for analysis.</em></p>
+
+---
+
+### Resume Intelligence Dashboard
+
+<p align="center">
+  <img src="docs/screenshots/resume-intelligence.png" alt="Resume intelligence scores, radar, and skill matrix" width="900"/>
+</p>
+
+<p align="center"><em>Executive hiring report — composite scores, capability radar, and skill matrix.</em></p>
+
+<p align="center">
+  <img src="docs/screenshots/recruiter-dashboard-full.png" alt="Full Foundry recruiter dashboard scroll" width="900"/>
+</p>
+
+<p align="center"><em>Full-page Foundry dashboard — inbox through deep intelligence panels.</em></p>
+
+---
+
+### ATS Score
+
+<p align="center">
+  <img src="docs/screenshots/ats-analysis.png" alt="ATS scoring panel on the recruiter dashboard" width="900"/>
+</p>
+
+<p align="center"><em>ATS structure score alongside overall and technical signals.</em></p>
+
+---
+
+### Skills Matrix
+
+<p align="center">
+  <img src="docs/screenshots/skills-matrix.png" alt="Skill matrix proficiency vs role relevance" width="900"/>
+</p>
+
+<p align="center"><em>Proficiency vs role relevance for the target engineering bar.</em></p>
+
+---
+
+### Radar Chart
+
+<p align="center">
+  <img src="docs/screenshots/radar-chart.png" alt="Capability radar chart" width="900"/>
+</p>
+
+<p align="center"><em>Capability radar — technical, AI systems, product, communication, architecture, execution.</em></p>
+
+---
+
+### Interview Questions
+
+<p align="center">
+  <img src="docs/screenshots/interview-questions.png" alt="AI-generated interview questions panel" width="900"/>
+</p>
+
+<p align="center"><em>Calibrated interview questions generated from resume + role context.</em></p>
+
+---
+
+### Hiring Recommendation
+
+<p align="center">
+  <img src="docs/screenshots/hiring-recommendation.png" alt="Hiring recommendation Strong Hire badge and export bar" width="900"/>
+</p>
+
+<p align="center"><em>Hiring recommendation with exportable report (PDF, Markdown, JSON, CSV).</em></p>
+
+---
+
+## Why I built this
+
+Hiring is still often a form submission followed by a stack of PDFs. Recruiters scan resumes under time pressure, compare candidates inconsistently, and lose signal that was never captured in a structured way.
+
+Resumes are hard to review at scale: free-form layouts, uneven depth, and no shared rubric. Strong candidates get missed; weak fits consume interview bandwidth.
+
+Foundry explores a different product shape:
+
+1. Give candidates a **premium application experience** that feels intentional — not a generic careers form.
+2. Give recruiters **structured evidence** — parsed profiles, ATS structure, skills, fit rationale, and interview prompts.
+3. Keep **humans in the loop**. AI should augment recruiters, not replace judgment or put candidates through an automated AI interview.
+
+The goal is better hiring decisions — not blind automation.
+
+---
+
+## Product Philosophy
+
+- **AI augments people.** Recommendations and scores exist to support recruiter judgment, not to auto-hire.
+- **Candidates deserve a premium application experience.** Brand, clarity, and craft matter on the public side as much as dashboards do on the internal side.
+- **Recruiters need structured evidence instead of resume scanning.** Parse once, surface strengths/risks, calibrate to the role.
+- **AI should improve hiring decisions rather than automate them blindly.** Every insight should be inspectable, exportable, and overridable.
+
+---
+
+## User journeys
+
+### Candidate journey
+
+```mermaid
+flowchart TD
+  A[Tamm Careers landing] --> B[Browse open roles]
+  B --> C[Job details]
+  C --> D[Multi-step application]
+  D --> E[Review and edit]
+  E --> F[Submit]
+  F --> G[Application success]
+  G --> H[Journey ends for candidate]
 ```
 
 Candidates stop at success. They are informed that Foundry prepares hiring insights for recruiters — they never enter the recruiter product.
 
----
+### Recruiter journey
 
-## Recruiter journey
+```mermaid
+flowchart TD
+  A[Foundry /recruiter] --> B[Applications inbox]
+  B --> C[Select application]
+  C --> D[AI processing stages]
+  D --> E[Resume intelligence]
+  E --> F[ATS · skills · radar]
+  F --> G[Interview questions]
+  G --> H[Hiring recommendation]
+  H --> I[Export report]
+```
 
-```text
-Foundry
-   ↓
-Applications inbox (rich cards · relative time · resume/AI badges · ATS)
-   ↓
-Select candidate
-   ↓
-AI processing animation
-   ↓
-Resume intelligence · skills · ATS · summary · strengths/risks
-   ↓
-Interview questions · hiring recommendation
+### AI pipeline
+
+```mermaid
+flowchart LR
+  Parse[Parse resume] --> Analyze[Analyze profile]
+  Analyze --> Fit[Fit rationale]
+  Fit --> Questions[Interview questions]
+  Questions --> Report[Hiring report panels]
+```
+
+When a recruiter opens an application with resume text, Foundry runs the live Gemini pipeline above. If resume text is unavailable, Foundry shows a clearly labeled demo analysis so the dashboard remains demoable.
+
+### Application lifecycle
+
+```mermaid
+stateDiagram-v2
+  [*] --> Drafting: Start apply
+  Drafting --> Submitted: POST /api/applications
+  Submitted --> InInbox: Appears in Foundry
+  InInbox --> Analyzing: Recruiter selects
+  Analyzing --> Reported: Insights ready
+  Reported --> Exported: PDF / MD / JSON / CSV
 ```
 
 ---
 
-## AI pipeline
+## Overview
 
-When a recruiter opens an application with resume text:
+**Foundry** is an AI Hiring Intelligence Platform. It is **not** a traditional ATS.
 
-```text
-Parse resume
-   ↓
-Analyze profile
-   ↓
-Fit rationale
-   ↓
-Interview questions
-   ↓
-Hiring report panels
-```
+It demonstrates a complete hiring narrative:
 
-If resume text is unavailable, Foundry shows a clearly labeled demo analysis so the dashboard remains demoable.
+1. **Public careers** — candidates discover roles and submit a premium multi-step application.
+2. **Application intake** — validated submissions land in a repository-backed applications API.
+3. **Recruiter intelligence** — Foundry opens the application, runs resume intelligence, and presents an executive hiring report.
+
+| Audience | Surfaces | What they see |
+| --- | --- | --- |
+| Candidates | `/`, `/careers`, `/apply`, `/application/success` | Tamm Careers only — never Foundry chrome |
+| Recruiters | `/recruiter` | Foundry applications inbox + AI hiring report |
+| Internal demo | `/candidate` | Optional Talk flow for AI pipeline demos |
+
+Demo persistence is **in-memory** (no auth, no database). Swapping to PostgreSQL/Supabase is designed as a repository replacement.
 
 ---
 
@@ -245,9 +498,15 @@ If resume text is unavailable, Foundry shows a clearly labeled demo analysis so 
 
 ## Screenshots
 
-<p align="center">
-  <img src="docs/images/dashboard.png" alt="Foundry recruiter dashboard — executive hiring report with scores, radar chart, and skill matrix" width="900"/>
-</p>
+Product surfaces are documented in **[Product Tour](#product-tour)** (`docs/screenshots/`).
+
+Legacy hero asset: [`docs/images/dashboard.png`](./docs/images/dashboard.png).
+
+Regenerate captures (app must be running):
+
+```bash
+BASE_URL=http://localhost:8600 node docs/scripts/capture-screenshots.mjs
+```
 
 ---
 
@@ -508,7 +767,7 @@ Get a Gemini key: [Google AI Studio](https://aistudio.google.com/apikey).
 
 ---
 
-## API reference
+## API reference (detail)
 
 All routes use `runtime = "nodejs"`. Responses follow a consistent envelope from `src/lib/ai/http.ts`.
 
@@ -897,6 +1156,7 @@ sequenceDiagram
 | --- | --- |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Mermaid system diagram, folder map, design principles, demo + live data flow |
 | [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Vercel prerequisites, env vars, verification checklist, production notes |
+| [docs/screenshots/README.md](./docs/screenshots/README.md) | Screenshot naming, capture script, optional GIF slots |
 | [CHANGELOG.md](./CHANGELOG.md) | Documentation change history |
 
 ---

@@ -15,6 +15,7 @@ Candidates apply through Tamm Careers. Recruiters review AI-generated insights i
 
 ## Table of contents
 
+- [Why I built this](#why-i-built-this)
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Candidate journey](#candidate-journey)
@@ -27,9 +28,15 @@ Candidates apply through Tamm Careers. Recruiters review AI-generated insights i
 - [Quick start](#quick-start)
 - [Environment variables](#environment-variables)
 - [API reference](#api-reference)
-- [Future roadmap](#future-roadmap)
+- [Roadmap](#roadmap)
 - [Author](#author)
 - [License](#license)
+
+---
+
+## Why I built this
+
+Many hiring processes still rely on generic forms that collect information but don't help recruiters make better decisions. Foundry explores a different approach: a premium candidate application experience paired with an AI-powered recruiter workspace that transforms resumes into structured, actionable hiring insights.
 
 ---
 
@@ -54,6 +61,49 @@ Demo persistence is **in-memory** (no auth, no database). Swapping to PostgreSQL
 ---
 
 ## Architecture
+
+```text
+                    Public Experience
+
+              Tamm Careers Landing
+                       │
+                       ▼
+                  Job Details
+                       │
+                       ▼
+              Premium Application
+                       │
+                       ▼
+            POST /api/applications
+                       │
+                       ▼
+            Application Repository
+                       │
+                       ▼
+                 Foundry Platform
+                       │
+           ┌───────────┼────────────┐
+           ▼           ▼            ▼
+       Resume AI    ATS Engine   Interview AI
+           │           │            │
+           └───────────┼────────────┘
+                       ▼
+              Recruiter Dashboard
+```
+
+Route groups keep experiences separate:
+
+- `(public)` — Tamm Careers layout and branding
+- `(foundry)` — Foundry shell, command palette, candidate store
+
+Applications domain:
+
+```text
+ApplicationService
+  → ApplicationRepository (interface)
+      → MemoryApplicationRepository   // now
+      → Supabase / Postgres           // later — no UI rewrite
+```
 
 ```mermaid
 flowchart TB
@@ -86,20 +136,6 @@ flowchart TB
   Apps --> Inbox
   Inbox --> Parse --> Analyze --> Fit --> Questions --> Report
   Report --> Store
-```
-
-Route groups keep experiences separate:
-
-- `(public)` — Tamm Careers layout and branding
-- `(foundry)` — Foundry shell, command palette, candidate store
-
-Applications domain:
-
-```text
-ApplicationService
-  → ApplicationRepository (interface)
-      → MemoryApplicationRepository   // now
-      → Supabase / Postgres           // later — no UI rewrite
 ```
 
 Full folder map: **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
@@ -234,14 +270,18 @@ pnpm dev       # http://localhost:8600
 
 ---
 
-## Future roadmap
+## Roadmap
 
-- Persist applications to PostgreSQL or Supabase via repository swap
-- Write AI analysis back onto `Application.analysis`
-- Auth for recruiter surfaces
-- Email notifications after review decisions
+Concise next steps — not claimed as shipped:
 
-Out of scope for this demo: full ATS kanban, scheduling, multi-tenant auth, candidate AI interviews.
+- PostgreSQL / Supabase persistence (swap `MemoryApplicationRepository`)
+- Recruiter authentication and RBAC
+- Application lifecycle (Applied → Interview → Offer)
+- Email notifications
+- Team collaboration
+- Analytics and reporting
+
+Out of scope for this demo: full ATS kanban, scheduling, multi-tenant SaaS, candidate AI interviews.
 
 ---
 

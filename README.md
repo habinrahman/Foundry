@@ -1,14 +1,8 @@
-# Foundry
+# Foundry — AI Hiring Intelligence Platform
 
-**AI Hiring Intelligence Platform**
+End-to-end AI hiring workflow consisting of a **premium candidate application experience** and an **internal recruiter intelligence platform**.
 
-<p align="center">
-  <img src="docs/images/dashboard.png" alt="Foundry recruiter dashboard — executive hiring report with scores, radar chart, and skill matrix" width="900"/>
-</p>
-
-Premium, AI-native recruitment software — the kind of product a Series A team ships.
-
-Parse resumes, generate adaptive interviews, evaluate answers, and present an executive hiring report. Demo state is **memory-only** (no auth, no database).
+Candidates apply through Tamm Careers. Recruiters review AI-generated insights in Foundry — resume parsing, skill extraction, ATS scoring, candidate summaries, interview questions, and hiring recommendations.
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
@@ -16,34 +10,24 @@ Parse resumes, generate adaptive interviews, evaluate answers, and present an ex
 [![Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-4F46E5?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![Zod](https://img.shields.io/badge/Zod-4-3E67B1?style=for-the-badge)](https://zod.dev/)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
-[![License](https://img.shields.io/badge/License-Private-lightgrey?style=for-the-badge)]()
 
 ---
 
 ## Table of contents
 
 - [Overview](#overview)
-- [Features](#features)
-- [Repository highlights](#repository-highlights)
-- [Project highlights](#project-highlights)
-- [Product surfaces](#product-surfaces)
 - [Architecture](#architecture)
-- [Demo vs live AI](#demo-vs-live-ai)
+- [Candidate journey](#candidate-journey)
+- [Recruiter journey](#recruiter-journey)
+- [AI pipeline](#ai-pipeline)
+- [Features](#features)
+- [System design](#system-design)
 - [Tech stack](#tech-stack)
+- [Screenshots](#screenshots)
 - [Quick start](#quick-start)
 - [Environment variables](#environment-variables)
-- [Development workflow](#development-workflow)
-- [Build & scripts](#build--scripts)
 - [API reference](#api-reference)
-- [AI pipeline & prompt engineering](#ai-pipeline--prompt-engineering)
-- [State management & data flow](#state-management--data-flow)
-- [Exports & keyboard shortcuts](#exports--keyboard-shortcuts)
-- [Security & performance](#security--performance)
-- [Accessibility & SEO](#accessibility--seo)
-- [Deployment](#deployment)
-- [Engineering decisions](#engineering-decisions)
-- [Known limitations](#known-limitations)
-- [Further reading](#further-reading)
+- [Future roadmap](#future-roadmap)
 - [Author](#author)
 - [License](#license)
 
@@ -51,26 +35,246 @@ Parse resumes, generate adaptive interviews, evaluate answers, and present an ex
 
 ## Overview
 
-**Foundry** is a portfolio-grade AI hiring intelligence platform that demonstrates an end-to-end hiring workflow:
+**Foundry** is an AI Hiring Intelligence Platform. It is **not** a traditional ATS.
 
-1. **Candidate conversation** — upload a resume (or use the built-in demo), walk through a staged AI analysis animation, and receive a fit narrative.
-2. **Recruiter dashboard** — executive hiring report with scores, radar chart, skill matrix, timeline, interview Q&A, and multi-format export.
-3. **Server-side AI layer** — five REST endpoints backed by Google Gemini with Zod-validated structured outputs, retry logic, and a provider seam for future OpenAI support.
+It demonstrates a complete hiring narrative:
+
+1. **Public careers** — candidates discover roles and submit a premium multi-step application.
+2. **Application intake** — validated submissions land in a repository-backed applications API.
+3. **Recruiter intelligence** — Foundry opens the application, runs resume intelligence, and presents an executive hiring report.
+
+| Audience | Surfaces | What they see |
+| --- | --- | --- |
+| Candidates | `/`, `/careers`, `/apply`, `/application/success` | Tamm Careers only — never Foundry chrome |
+| Recruiters | `/recruiter` | Foundry applications inbox + AI hiring report |
+| Internal demo | `/candidate` | Optional Talk flow for AI pipeline demos |
+
+Demo persistence is **in-memory** (no auth, no database). Swapping to PostgreSQL/Supabase is designed as a repository replacement.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TB
+  subgraph Public["Public · Tamm Careers"]
+    Landing["/ Careers landing"]
+    Roles["/careers · /careers/slug"]
+    Apply["/apply · multi-step form"]
+    Success["/application/success"]
+  end
+
+  subgraph API["Application + AI APIs"]
+    Apps["POST/GET /api/applications"]
+    Extract["POST /api/ai/extract-text"]
+    Parse["POST /api/ai/parse-resume"]
+    Analyze["POST /api/ai/analyze"]
+    Fit["POST /api/ai/fit"]
+    Questions["POST /api/ai/questions"]
+  end
+
+  subgraph Foundry["Internal · Foundry"]
+    Inbox["Applications list"]
+    Report["Recruiter dashboard"]
+    Store["CandidateStore"]
+  end
+
+  Landing --> Roles --> Apply
+  Apply --> Extract
+  Apply --> Apps
+  Apps --> Success
+  Apps --> Inbox
+  Inbox --> Parse --> Analyze --> Fit --> Questions --> Report
+  Report --> Store
+```
+
+Route groups keep experiences separate:
+
+- `(public)` — Tamm Careers layout and branding
+- `(foundry)` — Foundry shell, command palette, candidate store
+
+Applications domain:
+
+```text
+ApplicationService
+  → ApplicationRepository (interface)
+      → MemoryApplicationRepository   // now
+      → Supabase / Postgres           // later — no UI rewrite
+```
+
+Full folder map: **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
+
+---
+
+## Candidate journey
+
+```text
+Tamm Careers
+   ↓
+Browse roles
+   ↓
+Role details
+   ↓
+Premium application (personal → position → profile → resume → questions)
+   ↓
+Review & edit
+   ↓
+Application submitted
+```
+
+Candidates stop at success. They are informed that Foundry prepares hiring insights for recruiters — they never enter the recruiter product.
+
+---
+
+## Recruiter journey
+
+```text
+Foundry
+   ↓
+Applications inbox (rich cards · relative time · resume/AI badges · ATS)
+   ↓
+Select candidate
+   ↓
+AI processing animation
+   ↓
+Resume intelligence · skills · ATS · summary · strengths/risks
+   ↓
+Interview questions · hiring recommendation
+```
+
+---
+
+## AI pipeline
+
+When a recruiter opens an application with resume text:
+
+```text
+Parse resume
+   ↓
+Analyze profile
+   ↓
+Fit rationale
+   ↓
+Interview questions
+   ↓
+Hiring report panels
+```
+
+If resume text is unavailable, Foundry shows a clearly labeled demo analysis so the dashboard remains demoable.
+
+---
 
 ## Features
 
-- AI resume parsing (structured `ParsedResume` via Gemini + Zod)
-- Adaptive interview generation (10 role-calibrated technical questions)
-- Structured AI evaluation (per-question scores + hiring recommendation)
-- Executive recruiter dashboard (scores, radar, skill matrix, timeline, Q&A)
-- ATS scoring and fit rationale
-- Keyboard-first UX (command palette, navigation chords, theme toggle)
-- PDF / Markdown / JSON / CSV exports (client-side)
-- Provider abstraction (Gemini live · OpenAI seam stub)
-- Streaming AI responses (`POST /api/ai/fit` with `stream: true`)
-- Fully typed API contracts using Zod (request + response boundaries)
+- Premium Tamm Careers landing, listings, and role detail pages
+- Multi-step application with resume upload, review, and success timeline
+- `POST /api/applications` with Zod validation and nested application model
+- Foundry applications inbox with operational metrics
+- Live Gemini resume intelligence wired into the existing recruiter dashboard
+- ATS scoring, skill matrix, radar, strengths/risks, interview Q&A, recommendation
+- Theme-aware design system (light + dark)
+- Keyboard-first Foundry UX (command palette, shortcuts)
+- Client-side PDF / Markdown / JSON / CSV export
 
-> The UI currently runs on seeded demo data with a staged analysis animation. The features above are implemented on the server-side AI layer — see [Demo vs live AI](#demo-vs-live-ai).
+---
+
+## System design
+
+| Concern | Approach |
+| --- | --- |
+| Public vs internal | App Router route groups + separate layouts |
+| Applications | Service + repository abstraction; memory singleton for demo |
+| AI | `TalentAI` facade, provider seam, Zod schemas |
+| Recruiter UI | Applications list hydrates existing dashboard panels |
+| State | Local apply form state; Foundry `CandidateStore` for insights |
+
+### Design principles
+
+1. **Deep modules** — UI talks to services; storage and providers stay swappable.
+2. **Memory-first demo** — no auth/DB required to tell the full story.
+3. **Recruiter-focused AI** — AI assists hiring decisions; candidates do not take an AI interview.
+4. **Progressive enhancement** — charts lazy-load; processing animation respects reduced motion.
+5. **Accessibility** — landmarks, focusable apply steps, status regions, skip links.
+
+---
+
+## Tech stack
+
+- Next.js 15 (App Router) · React 19 · TypeScript
+- Tailwind CSS v4 · Framer Motion · Recharts
+- Google Gemini (`@google/genai`) · Zod 4
+- next-themes · Lucide
+
+---
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/dashboard.png" alt="Foundry recruiter dashboard — executive hiring report with scores, radar chart, and skill matrix" width="900"/>
+</p>
+
+---
+
+## Quick start
+
+```bash
+pnpm install   # or npm install
+cp .env.example .env.local
+# set GEMINI_API_KEY for live AI analysis
+pnpm dev       # http://localhost:8600
+```
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Tamm Careers landing |
+| `/careers` | Open roles |
+| `/apply` | Application flow |
+| `/recruiter` | Foundry recruiter intelligence |
+| `/candidate` | Optional internal AI Talk demo |
+
+---
+
+## Future roadmap
+
+- Persist applications to PostgreSQL or Supabase via repository swap
+- Write AI analysis back onto `Application.analysis`
+- Auth for recruiter surfaces
+- Email notifications after review decisions
+
+Out of scope for this demo: full ATS kanban, scheduling, multi-tenant auth, candidate AI interviews.
+
+---
+
+## Environment variables
+
+See `.env.example`. Core keys: `GEMINI_API_KEY`, optional `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_APP_NAME`.
+
+---
+
+## API reference
+
+### Applications
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/applications` | Create application |
+| `GET` | `/api/applications` | List applications |
+| `GET` | `/api/applications/[id]` | Fetch one application |
+
+### AI
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/ai/extract-text` | PDF/DOCX → text |
+| `POST` | `/api/ai/parse-resume` | Structured resume |
+| `POST` | `/api/ai/analyze` | Skills, strengths, risks |
+| `POST` | `/api/ai/fit` | Fit rationale (+ optional stream) |
+| `POST` | `/api/ai/questions` | Interview questions |
+| `POST` | `/api/ai/evaluate` | Answer evaluation |
+
+Further detail remains in the sections below and in **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** / **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)**.
+
+---
 
 ## Repository highlights
 
@@ -86,66 +290,56 @@ Parse resumes, generate adaptive interviews, evaluate answers, and present an ex
 
 ## Project highlights
 
-Verified counts from the current codebase:
-
-- **5** production-ready AI API endpoints (`/api/ai/*`)
-- **6** AI capabilities on `TalentAI` (parse, analyze, fit, stream fit, questions, evaluate)
-- **10** adaptive interview questions per generation (`technicalQuestionSetSchema`)
+- **Public + internal** product surfaces in one repo
+- **6** seeded engineering roles on Tamm Careers
+- **5** production AI API endpoints (`/api/ai/*`)
+- **Applications API** with repository abstraction
 - **4** export formats (PDF, Markdown, JSON, CSV)
-- **7**-stage candidate workflow animation (`useAiPipeline`)
-- **React 19** + **Next.js 15**
 
-### Business problem
+### Target role calibration
 
-Technical hiring for AI-native product roles is slow, inconsistent, and hard to calibrate. Recruiters need structured signal (resume parsing, ATS scoring, tailored interview questions, answer evaluation) in one place — not scattered spreadsheets and ad-hoc notes.
-
-### Target users
-
-| Persona | Surface | Goal |
-| --- | --- | --- |
-| **Candidate** | `/candidate` | Understand fit for the target role through a conversational flow |
-| **Recruiter / hiring manager** | `/recruiter` | Review an executive hiring report and override the recommendation |
-| **Engineer / evaluator** | `/api/ai/*` | Integrate or test the AI capabilities directly |
-
-The demo calibrates all AI outputs against a single target role defined in `src/constants/role.ts`: **AI Product Engineer (Mid–Senior)**.
+AI outputs calibrate against `src/constants/role.ts` (AI Product Engineer) when generating fit and questions.
 
 ---
 
-## Product surfaces
+## Product surfaces (detail)
 
 | Route | Experience |
 | --- | --- |
-| `/` | Brand landing · keyboard-first navigation |
-| `/candidate` | Conversational AI flow · staged thinking · typewriter |
-| `/recruiter` | Executive hiring report · insights · export toast |
+| `/` | Tamm Careers landing |
+| `/careers` | Engineering opportunities |
+| `/careers/[slug]` | Role details |
+| `/apply` | Premium multi-step application |
+| `/application/success` | Application received + progress |
+| `/recruiter` | Foundry inbox + hiring intelligence |
+| `/candidate` | Optional Talk / AI demo |
 
 ```mermaid
 flowchart LR
-  Home["/ Landing"]
-  Candidate["/candidate\nConversation"]
-  Recruiter["/recruiter\nDashboard"]
-  Home --> Candidate
-  Candidate --> Recruiter
-  Home --> Recruiter
+  Careers["Tamm Careers"]
+  Apply["Apply"]
+  Success["Submitted"]
+  Foundry["Foundry /recruiter"]
+  Careers --> Apply --> Success
+  Apply --> Foundry
 ```
 
 ---
 
-## Architecture
+## Architecture (detail)
 
 Full diagram and folder map: **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
 
 ```mermaid
 flowchart TB
   subgraph Client["Browser"]
-    Shell["AppProviders\nTheme · Command Palette · Shortcuts · Error Boundary"]
-    Home["/ Landing"]
-    Candidate["/candidate\nDropzone · Progress · Typewriter"]
-    Recruiter["/recruiter\nDashboard · Lazy Charts · Optimistic UI"]
-    Store["CandidateStore\n(in-memory session)"]
+    Public["(public) Careers shell"]
+    FoundryShell["(foundry) Foundry shell"]
+    Store["CandidateStore"]
   end
 
   subgraph API["Next.js API Routes"]
+    Apps["/api/applications"]
     Parse["POST /api/ai/parse-resume"]
     Analyze["POST /api/ai/analyze"]
     Fit["POST /api/ai/fit"]
@@ -162,19 +356,14 @@ flowchart TB
     Schemas["Zod schemas"]
   end
 
-  Shell --> Home
-  Shell --> Candidate
-  Shell --> Recruiter
-  Shell --> Store
-  Candidate --> Store
-  Recruiter --> Store
-
+  Public --> Apps
+  FoundryShell --> Apps
+  FoundryShell --> Store
   Parse --> TalentAI
   Analyze --> TalentAI
   Fit --> TalentAI
   Questions --> TalentAI
   Evaluate --> TalentAI
-
   TalentAI --> Prompts
   TalentAI --> Schemas
   TalentAI --> Provider
@@ -182,77 +371,28 @@ flowchart TB
   Provider --> OpenAI
 ```
 
-### AI hiring pipeline
-
-Core server-side flow (callable today via `/api/ai/*`; UI integration planned):
-
-```mermaid
-flowchart TD
-  Resume["Resume text"]
-  Parse["Parse Resume\nPOST /api/ai/parse-resume"]
-  Analyze["Analyze Resume\nPOST /api/ai/analyze"]
-  Fit["Fit Analysis\nPOST /api/ai/fit"]
-  Questions["Generate Questions\nPOST /api/ai/questions"]
-  Evaluate["Evaluate Answers\nPOST /api/ai/evaluate"]
-  Report["Recruiter Report\n/recruiter dashboard"]
-
-  Resume --> Parse --> Analyze --> Fit --> Questions --> Evaluate --> Report
-```
-
-```text
-Resume
-   │
-   ▼
-Parse Resume
-   │
-   ▼
-Analyze Resume
-   │
-   ▼
-Fit Analysis
-   │
-   ▼
-Generate Questions
-   │
-   ▼
-Evaluate Answers
-   │
-   ▼
-Recruiter Report
-```
-
 ### Folder structure
 
 ```text
 src/
-  app/                 # App Router pages, API routes, OG/favicon, robots, sitemap
+  app/
+    (public)/          # Tamm Careers pages
+    (foundry)/         # Foundry candidate + recruiter
+    api/applications/  # Application intake
+    api/ai/            # AI endpoints
   components/
-    ai/                # Pipeline progress UI
-    command/           # Command palette
-    dashboard/         # Recruiter panels (charts lazy-loaded)
-    illustrations/     # Original SVG art
-    motion/            # Typewriter, thinking, progress, fade
-    providers/         # App shell providers
-    ui/                # Button, Badge, Skeleton, ErrorBoundary
-    upload/            # Drag & drop resume
-  constants/           # TARGET_ROLE — single source of truth for hiring context
-  data/                # DEMO_CANDIDATE seed (Aisha Rahman)
-  hooks/               # Keyboard shortcuts, AI pipeline, optimistic UI, file drop
-  lib/
-    ai/                # Provider seam, prompts, services, HTTP helpers, schemas
-    export/            # PDF / MD / JSON / CSV client-side export
-    seo.ts / site.ts
-  store/               # In-memory candidate session (React Context)
-  types/               # Domain + dashboard types
-docs/
-  ARCHITECTURE.md      # System diagram, design principles, data flow
-  DEPLOYMENT.md        # Vercel deploy guide
+    careers/           # Public careers UI
+    dashboard/         # Recruiter panels + applications list
+    ...
+  data/careers/        # Role catalog
+  lib/applications/    # Service + repository
+  lib/ai/              # Provider seam, prompts, schemas
 ```
 
 ### Design principles
 
-1. **Deep modules** — callers use `TalentAI` / `useCandidateStore`; providers and prompts stay internal.
-2. **Memory-first demo** — no auth, no DB; session resets with the page or via command palette.
+1. **Deep modules** — callers use `TalentAI` / `ApplicationService` / `useCandidateStore`.
+2. **Memory-first demo** — no auth, no DB; applications clear on server restart.
 3. **Provider seam** — swap Gemini → OpenAI without touching UI or route handlers.
 4. **Progressive enhancement** — charts and dashboard chunks lazy-load; skeletons fill the gap.
 5. **Accessibility** — semantic landmarks, ARIA on interactive surfaces, reduced-motion support.
@@ -261,114 +401,50 @@ docs/
 
 ## Demo vs live AI
 
-> **Important:** The browser UI does **not** call `/api/ai/*` today. Verified by repository inspection — no client-side `fetch` to AI routes exists in `src/`.
-
 | Layer | Behavior |
 | --- | --- |
-| **UI (candidate + recruiter)** | Reads and writes an in-memory `CandidateSession` seeded by `src/data/demo-candidate.ts`. Upload accepts PDF/DOCX (client validation only); analysis runs as a **timed animation** via `useAiPipeline`, then displays the seeded demo data. |
-| **API routes (`/api/ai/*`)** | Fully implemented server-side endpoints. Require `GEMINI_API_KEY`. Callable via `curl`, Postman, or a future UI integration. |
-
-The recruiter dashboard and candidate demo UI work **without** an API key. Live AI routes return `503` with code `MISSING_API_KEY` when `GEMINI_API_KEY` is unset.
-
----
-
-## Tech stack
-
-| Layer | Technology |
-| --- | --- |
-| **Framework** | Next.js 15 App Router (Turbopack for dev/build) |
-| **UI** | React 19, TypeScript, Tailwind CSS 4, Framer Motion, Recharts, Lucide |
-| **Theming** | `next-themes` (dark / light) |
-| **AI** | Google Gemini via `@google/genai`; Zod schemas for structured outputs |
-| **Validation** | Zod (request bodies + AI response shapes) |
-| **Deploy** | Vercel (`vercel.json` included) |
-
-**Not present in this repository:** database (Prisma/Drizzle/SQL), authentication, background jobs, Docker, Terraform, CI/CD (GitHub Actions), or automated tests.
-
----
-
-## Quick start
-
-```bash
-cp .env.example .env.local
-# Set GEMINI_API_KEY=your_key  (optional for UI-only demo)
-npm install
-npm run dev
-```
-
-Open **[http://localhost:8600](http://localhost:8600)**.
-
-> **Port note:** `package.json` binds the dev server to port **8600** (`next dev --turbopack -p 8600`). `.env.example` defaults `NEXT_PUBLIC_APP_URL` to `http://localhost:8600` for local OG/sitemap URLs.
-
-### Verify the demo
-
-1. Visit `/` — landing page and keyboard shortcuts.
-2. Visit `/candidate` — drag-drop upload, optional LinkedIn, staged analysis animation.
-3. Visit `/recruiter` — dashboard, charts, hiring recommendation override, exports.
-4. Press `⌘K` / `Ctrl+K` — command palette.
-
----
-
-## Environment variables
-
-Copy `.env.example` → `.env.local` (or `.env.local.example` — identical content):
-
-```bash
-# Public site URL (Open Graph / absolute links)
-NEXT_PUBLIC_APP_URL=http://localhost:8600
-NEXT_PUBLIC_APP_NAME=Foundry
-
-# AI Provider: gemini | openai
-AI_PROVIDER=gemini
-AI_MODEL=gemini-2.5-flash
-AI_TEMPERATURE=0.2
-AI_MAX_RETRIES=3
-AI_RETRY_BASE_DELAY_MS=500
-AI_REQUEST_TIMEOUT_MS=60000
-
-# Gemini (required when AI_PROVIDER=gemini and calling /api/ai/*)
-GEMINI_API_KEY=
-
-# OpenAI (optional — provider seam stub only; not implemented)
-OPENAI_API_KEY=
-```
-
-| Variable | Default | Required | Purpose |
-| --- | --- | --- | --- |
-| `GEMINI_API_KEY` | — | Yes for live AI routes | Google AI Studio API key |
-| `AI_PROVIDER` | `gemini` | No | `gemini` or `openai` (stub) |
-| `AI_MODEL` | `gemini-2.5-flash` | No | Gemini model id |
-| `AI_TEMPERATURE` | `0.2` | No | Base temperature (overridden per capability in `TalentAI`) |
-| `AI_MAX_RETRIES` | `3` | No | Exponential backoff retries for retryable errors |
-| `AI_RETRY_BASE_DELAY_MS` | `500` | No | Base delay for retry backoff |
-| `AI_REQUEST_TIMEOUT_MS` | `60000` | No | Documented timeout budget (**not yet wired** to `AbortController` in `GeminiProvider`) |
-| `NEXT_PUBLIC_APP_URL` | `http://localhost:8600` (see `.env.example`) | Recommended | Canonical URL for SEO metadata |
-| `NEXT_PUBLIC_APP_NAME` | `Foundry` | No | Display name in shell and metadata |
-
-Get a Gemini key: [Google AI Studio](https://aistudio.google.com/apikey).
+| **Tamm Careers apply** | Uploads resume, attempts `/api/ai/extract-text`, then `POST /api/applications` (memory store). |
+| **Foundry recruiter** | Lists applications; selecting one with resume text runs the live AI pipeline (`parse` → `analyze` → `fit` → `questions`) into `CandidateStore`. |
+| **No resume text** | Clearly labeled demo analysis so the dashboard stays demoable. |
+| **`/candidate` Talk** | Optional internal demo path for conversational AI UX. |
+| **API keys** | Live analysis needs `GEMINI_API_KEY`. Without it, analysis falls back to demo insights with a notice. |
 
 ---
 
 ## Development workflow
 
+Use `npm run typecheck` and `npm run build` before shipping UI changes. Dev server: **port 8600**.
+
+### Verify the product story
+
+1. Visit `/` — Tamm Careers landing.
+2. Open a role → Apply → complete Review → Submit.
+3. Visit `/recruiter` — application card appears → View candidate → AI stages → hiring report.
+4. Press `⌘K` / `Ctrl+K` on Foundry routes — command palette.
+
+---
+
+## Environment variables (detail)
+
+Copy `.env.example` → `.env.local`:
+
 ```bash
-npm run dev        # Turbopack dev server on port 8600
-npm run build      # Production build (Turbopack)
-npm run start      # Start production server (default port 3000)
-npm run lint       # ESLint (next/core-web-vitals + typescript)
-npm run typecheck  # tsc --noEmit
+NEXT_PUBLIC_APP_URL=http://localhost:8600
+NEXT_PUBLIC_APP_NAME=Foundry
+AI_PROVIDER=gemini
+AI_MODEL=gemini-2.5-flash
+GEMINI_API_KEY=
 ```
 
-### Local production parity
+| Variable | Default | Required | Purpose |
+| --- | --- | --- | --- |
+| `GEMINI_API_KEY` | — | Yes for live AI | Google AI Studio API key |
+| `AI_PROVIDER` | `gemini` | No | `gemini` or `openai` (stub) |
+| `AI_MODEL` | `gemini-2.5-flash` | No | Gemini model id |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:8600` (see `.env.example`) | Recommended | Canonical URL for SEO metadata |
+| `NEXT_PUBLIC_APP_NAME` | `Foundry` | No | Display name in shell and metadata |
 
-```bash
-cp .env.example .env.local
-npm install
-npm run build
-npm run start
-```
-
-Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
+Get a Gemini key: [Google AI Studio](https://aistudio.google.com/apikey).
 
 ---
 
@@ -722,60 +798,33 @@ Framework preset: **Next.js** (auto-detected). Build: `npm run build`. Region de
 
 ## Known limitations
 
-Verified gaps (not roadmap promises):
-
 | Area | Finding |
 | --- | --- |
-| **UI ↔ API integration** | Candidate flow does not call `/api/ai/*`; uploaded files are not parsed server-side |
-| **LinkedIn URL in UI** | Collected in `/candidate` conversation but **not written** to `CandidateStore` or sent to APIs |
-| **OpenAI provider** | Stub only — all methods throw `PROVIDER_UNAVAILABLE` |
-| **Persistence** | No database; session lost on refresh unless re-seeded |
-| **Auth** | None |
-| **Tests** | No test files (`*.test.*`, `*.spec.*`) in repository |
-| **CI/CD** | No `.github/workflows` or equivalent |
-| **Containerization** | No Dockerfile or docker-compose |
-| **Port defaults** | Dev: **8600** (`npm run dev`); production `npm start`: **3000** unless `PORT` set; `getAppUrl()` falls back to `http://localhost:3000` when `NEXT_PUBLIC_APP_URL` is unset |
-| **License file** | README states private demo; no `LICENSE` file present |
+| **Persistence** | Applications live in a process memory store; cleared on server restart |
+| **Auth** | None — demo-only |
+| **OpenAI provider** | Stub only — throws `PROVIDER_UNAVAILABLE` |
+| **Tests / CI** | No automated test suite or GitHub Actions workflows yet |
+| **Full ATS** | No kanban, email, scheduling, or multi-tenant auth by design |
 
 ---
 
-## Intended live AI flow (not wired to UI)
-
-When the candidate UI is integrated with `/api/ai/*`, the server-side sequence is:
+## Live AI flow (recruiter)
 
 ```mermaid
 sequenceDiagram
-  participant UI as Client UI
+  participant R as Recruiter UI
+  participant Apps as /api/applications
   participant API as /api/ai/*
   participant TA as TalentAI
   participant G as GeminiProvider
 
-  UI->>API: POST parse-resume (resumeText)
-  API->>TA: parseResume()
-  TA->>G: generateStructured(ParsedResume)
-  G-->>UI: ParsedResume
-
-  UI->>API: POST analyze (resume)
-  TA->>G: generateStructured(ResumeAnalysis)
-  G-->>UI: ResumeAnalysis
-
-  UI->>API: POST fit (resume, analysis)
-  TA->>G: generateStructured or stream
-  G-->>UI: FitRationale
-
-  UI->>API: POST questions (resume, analysis?)
-  TA->>G: generateStructured(10 questions)
-  G-->>UI: TechnicalQuestionSet
-
-  Note over UI: User answers questions (UI TBD)
-  UI->>API: POST evaluate (resume, questions, answers)
-  TA->>G: generateStructured(AnswerEvaluation)
-  G-->>UI: AnswerEvaluation
-
-  UI->>UI: setCandidate(CandidateSession)
+  R->>Apps: GET applications
+  Apps-->>R: Application list
+  R->>API: parse → analyze → fit → questions
+  API->>TA: TalentAI capabilities
+  TA->>G: generateStructured
+  G-->>R: CandidateSession panels
 ```
-
-Today, the UI skips this path and reads `DEMO_CANDIDATE` from `CandidateStoreProvider`.
 
 ---
 
@@ -783,14 +832,11 @@ Today, the UI skips this path and reads `DEMO_CANDIDATE` from `CandidateStorePro
 
 | Symptom | Likely cause | Fix |
 | --- | --- | --- |
-| Dev server not on expected port | `npm run dev` binds **8600** | Open `http://localhost:8600` or change `-p` in `package.json` |
-| `/api/ai/*` returns 503 | `GEMINI_API_KEY` missing | Set key in `.env.local`; restart dev server |
-| `/api/ai/*` returns 400 | Invalid request body | Match schemas in `src/lib/ai/request-schemas.ts` |
-| `/api/ai/*` returns 429 | Gemini rate limit | Retries run automatically; wait and retry |
-| Upload does not change dashboard data | **By design today** | UI does not parse uploads or call APIs; use API via `curl` or wire integration |
-| Theme stuck on dark | `next-themes` localStorage | Click **Light** in header or clear site data |
-| Hydration flash on recruiter page | Client-only chart gate | Expected: `DashboardSkeleton` until `useMounted()` |
-| OG URLs wrong locally | `NEXT_PUBLIC_APP_URL` defaults to 3000 | Set `NEXT_PUBLIC_APP_URL=http://localhost:8600` |
+| Dev server not on expected port | `npm run dev` binds **8600** | Open `http://localhost:8600` |
+| Live analysis fails | `GEMINI_API_KEY` missing | Set key in `.env.local`; restart |
+| Application missing after restart | Memory store reset | Re-submit via `/apply` |
+| Theme stuck | `next-themes` localStorage | Toggle Light/Dark or clear site data |
+| OG URLs wrong locally | `NEXT_PUBLIC_APP_URL` unset | Set `NEXT_PUBLIC_APP_URL=http://localhost:8600` |
 
 ---
 

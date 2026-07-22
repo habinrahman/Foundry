@@ -151,7 +151,7 @@ export function ApplyForm() {
     }
     if (index === 2) {
       try {
-        // eslint-disable-next-line no-new
+        // Validate URL shape
         new URL(form.linkedInUrl.trim());
       } catch {
         next.linkedInUrl = "Enter a valid LinkedIn URL";
@@ -160,7 +160,6 @@ export function ApplyForm() {
         const value = form[key].trim();
         if (!value) continue;
         try {
-          // eslint-disable-next-line no-new
           new URL(value);
         } catch {
           next[key] = "Enter a valid URL";

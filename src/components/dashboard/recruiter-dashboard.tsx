@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   Activity,
   Brain,
@@ -9,7 +9,13 @@ import {
   MessageSquareText,
   Sparkles,
 } from "lucide-react";
+import {
+  AiProcessingPanel,
+  RECRUITER_AI_STAGES,
+  runAiStageAnimation,
+} from "@/components/dashboard/ai-processing-panel";
 import { ApplicationsList } from "@/components/dashboard/applications-list";
+import { DashboardMetrics } from "@/components/dashboard/dashboard-metrics";
 import { OverviewCard } from "@/components/dashboard/overview-cards";
 import { SkillMatrix } from "@/components/dashboard/skill-matrix";
 import { CandidateTimeline } from "@/components/dashboard/timeline";
@@ -23,7 +29,11 @@ import { ExportBar } from "@/components/dashboard/export-bar";
 import { RecommendationBadge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCandidateStore } from "@/store/candidate-store";
-import { useCommandPalette, useLiveAiPipeline } from "@/hooks";
+import {
+  useCommandPalette,
+  useLiveAiPipeline,
+  usePrefersReducedMotion,
+} from "@/hooks";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion/fade-in";
 import { DEMO_CANDIDATE } from "@/data/demo-candidate";
@@ -59,12 +69,17 @@ function seedFromApplication(app: Application): CandidateSession {
 export const RecruiterDashboard = memo(function RecruiterDashboard() {
   const { candidate, setCandidate } = useCandidateStore();
   const { setOpen } = useCommandPalette();
+  const reducedMotion = usePrefersReducedMotion();
   const { scores, resume, analysis, fit, questions, answers, evaluation } =
     candidate;
 
+  const [applications, setApplications] = useState<Application[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [analyzedIds, setAnalyzedIds] = useState<Set<string>>(() => new Set());
+  const [atsById, setAtsById] = useState<Record<string, number>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [stageIndex, setStageIndex] = useState(0);
   const [hydrateNotice, setHydrateNotice] = useState<string | null>(null);
   const [hydrateError, setHydrateError] = useState<string | null>(null);
 
@@ -72,19 +87,31 @@ export const RecruiterDashboard = memo(function RecruiterDashboard() {
     onComplete: (session) => setCandidate(session),
   });
 
+  const onLoaded = useCallback((apps: Application[]) => {
+    setApplications(apps);
+  }, []);
+
   const onSelectApplication = useCallback(
     async (app: Application) => {
       setSelectedId(app.id);
       setHydrateError(null);
       setBusyId(app.id);
+      setProcessing(true);
+      setStageIndex(0);
+      setHydrateNotice(null);
+
+      const animation = runAiStageAnimation(setStageIndex, reducedMotion);
 
       try {
         if (app.resume.text?.trim()) {
-          setHydrateNotice("Running AI analysis on submitted resume…");
-          const session = await pipeline.run({
-            resumeText: app.resume.text,
-            linkedInUrl: app.professional.linkedInUrl,
-          });
+          const [, session] = await Promise.all([
+            animation,
+            pipeline.run({
+              resumeText: app.resume.text,
+              linkedInUrl: app.professional.linkedInUrl,
+            }),
+          ]);
+          setStageIndex(RECRUITER_AI_STAGES.length - 1);
           setCandidate({
             ...session,
             roleTitle: app.role.title,
@@ -96,28 +123,83 @@ export const RecruiterDashboard = memo(function RecruiterDashboard() {
             },
             updatedAt: new Date().toISOString(),
           });
+          setAtsById((prev) => ({
+            ...prev,
+            [app.id]: session.scores.atsScore,
+          }));
           setAnalyzedIds((prev) => new Set(prev).add(app.id));
-          setHydrateNotice(null);
         } else {
-          setCandidate(seedFromApplication(app));
+          await animation;
+          const seeded = seedFromApplication(app);
+          setCandidate(seeded);
+          setAtsById((prev) => ({
+            ...prev,
+            [app.id]: seeded.scores.atsScore,
+          }));
+          setAnalyzedIds((prev) => new Set(prev).add(app.id));
           setHydrateNotice(
             "Showing representative demo analysis — resume text unavailable for this application."
           );
         }
       } catch (err) {
+        await animation.catch(() => undefined);
         setHydrateError(
           err instanceof Error ? err.message : "Unable to analyze application."
         );
-        setCandidate(seedFromApplication(app));
+        const seeded = seedFromApplication(app);
+        setCandidate(seeded);
+        setAtsById((prev) => ({
+          ...prev,
+          [app.id]: seeded.scores.atsScore,
+        }));
         setHydrateNotice(
           "Live analysis failed — showing representative demo insights for this candidate."
         );
       } finally {
         setBusyId(null);
+        setTimeout(() => setProcessing(false), reducedMotion ? 0 : 400);
       }
     },
-    [pipeline.run, setCandidate]
+    [pipeline, reducedMotion, setCandidate]
   );
+
+  const metrics = useMemo(() => {
+    const total = applications.length;
+    const pending = applications.filter((a) => !analyzedIds.has(a.id)).length;
+    const atsValues = Object.values(atsById);
+    const avgAts =
+      atsValues.length > 0
+        ? Math.round(
+            atsValues.reduce((sum, n) => sum + n, 0) / atsValues.length
+          )
+        : analyzedIds.size > 0
+          ? Math.round(scores.atsScore)
+          : null;
+    const interviews = analyzedIds.size;
+
+    return [
+      {
+        label: "Applications",
+        value: String(total),
+        hint: "From Tamm Careers",
+      },
+      {
+        label: "Pending review",
+        value: String(pending),
+        hint: "Awaiting AI analysis",
+      },
+      {
+        label: "Average ATS match",
+        value: avgAts === null ? "—" : `${avgAts}%`,
+        hint: analyzedIds.size ? "Across reviewed candidates" : "Analyze to populate",
+      },
+      {
+        label: "Interviews suggested",
+        value: String(interviews),
+        hint: "Candidates with AI reports",
+      },
+    ];
+  }, [applications, analyzedIds, atsById, scores.atsScore]);
 
   const insights = [
     fit.matchPoints[0],
@@ -127,20 +209,25 @@ export const RecruiterDashboard = memo(function RecruiterDashboard() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+      <DashboardMetrics metrics={metrics} />
+
       <ApplicationsList
         selectedId={selectedId}
         analyzedIds={analyzedIds}
+        atsById={atsById}
         onSelect={onSelectApplication}
         busyId={busyId}
+        onLoaded={onLoaded}
       />
 
-      {hydrateNotice ? (
+      <AiProcessingPanel active={processing} stageIndex={stageIndex} />
+
+      {hydrateNotice && !processing ? (
         <p
           className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--accent-soft)] px-4 py-3 text-sm"
           role="status"
         >
           {hydrateNotice}
-          {pipeline.active ? ` ${pipeline.stageLabel}` : null}
         </p>
       ) : null}
       {hydrateError ? (

@@ -7,6 +7,30 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getApplicationApi } from "@/lib/applications/api-client";
 import type { Application } from "@/lib/applications/types";
+import { cn } from "@/lib/utils";
+
+const PIPELINE = [
+  {
+    title: "Application received",
+    body: "Your submission is securely stored with your application ID.",
+    state: "done" as const,
+  },
+  {
+    title: "Resume processing",
+    body: "Our hiring platform prepares structured insights for recruiters.",
+    state: "active" as const,
+  },
+  {
+    title: "Recruiter review",
+    body: "A recruiter reviews your profile against the role requirements.",
+    state: "upcoming" as const,
+  },
+  {
+    title: "Interview invitation",
+    body: "If there is a strong match, we will contact you about next steps.",
+    state: "upcoming" as const,
+  },
+] as const;
 
 export function ApplicationSuccessView() {
   const searchParams = useSearchParams();
@@ -60,18 +84,54 @@ export function ApplicationSuccessView() {
           <p className="mt-1 font-mono text-sm font-medium">{idLabel}</p>
         </div>
 
-        <div className="mt-8">
-          <h2 className="font-heading text-lg font-semibold">What happens next?</h2>
-          <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[var(--muted)]">
-            <li>• Your application has been received.</li>
-            <li>• Recruiters will review your profile.</li>
-            <li>
-              • Foundry will prepare AI-powered hiring insights.
-            </li>
-            <li>
-              • If your experience is a good match, we&apos;ll contact you.
-            </li>
-          </ul>
+        <div className="mt-10">
+          <h2 className="font-heading text-lg font-semibold">Hiring progress</h2>
+          <ol className="relative mt-6 space-y-0">
+            {PIPELINE.map((step, index) => (
+              <li key={step.title} className="relative flex gap-4 pb-8 last:pb-0">
+                {index < PIPELINE.length - 1 ? (
+                  <span
+                    className="absolute left-[11px] top-7 h-[calc(100%-12px)] w-px bg-[var(--border-strong)]"
+                    aria-hidden
+                  />
+                ) : null}
+                <span
+                  className={cn(
+                    "relative z-[1] mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium",
+                    step.state === "done" &&
+                      "border-[var(--success)] bg-[color-mix(in_oklab,var(--success)_16%,transparent)] text-[var(--success)]",
+                    step.state === "active" &&
+                      "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]",
+                    step.state === "upcoming" &&
+                      "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]"
+                  )}
+                  aria-hidden
+                >
+                  {step.state === "done" ? "✓" : index + 1}
+                </span>
+                <div>
+                  <p
+                    className={cn(
+                      "font-medium",
+                      step.state === "upcoming"
+                        ? "text-[var(--muted)]"
+                        : "text-[var(--foreground)]"
+                    )}
+                  >
+                    {step.title}
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
+                    {step.body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--background)]/60 px-4 py-3 text-sm text-[var(--muted)]">
+          Foundry will prepare AI-powered hiring insights for our recruiting
+          team. You do not need to take any further action right now.
         </div>
 
         <div className="mt-10 flex flex-wrap gap-3">

@@ -208,7 +208,7 @@ function buildPrintableHtml(candidate: CandidateSession): string {
   <style>
     body {
       font-family: "Inter", "Segoe UI", system-ui, sans-serif;
-      color: #111;
+      color: #0b1015; /* light --foreground for print */
       line-height: 1.65;
       max-width: 800px;
       margin: 32px auto;

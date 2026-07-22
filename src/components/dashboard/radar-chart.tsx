@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { useTheme } from "next-themes";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -20,13 +21,15 @@ export const CandidateRadarChart = memo(function CandidateRadarChart({
   data: RadarAxis[];
   delay?: number;
 }) {
+  const { resolvedTheme } = useTheme();
+
   return (
     <Panel delay={delay} className="h-full">
       <PanelHeader
         title="Capability radar"
         subtitle="Interview + resume composite"
       />
-      <div className="h-[280px] w-full">
+      <div className="h-[280px] w-full" key={resolvedTheme}>
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
             <PolarGrid stroke="var(--chart-grid)" />

@@ -1,8 +1,8 @@
 import { ImageResponse } from "next/og";
-import { APP_NAME, APP_TAGLINE, SITE } from "@/lib/site";
+import { APP_NAME, APP_TAGLINE } from "@/lib/site";
 
 export const runtime = "edge";
-export const alt = `${APP_NAME} — ${SITE.tagline}`;
+export const alt = `${APP_NAME} — ${APP_TAGLINE}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -49,7 +49,7 @@ export default function OpenGraphImage() {
             {APP_TAGLINE}
           </div>
           <div style={{ fontSize: 28, color: "#93A0AE", maxWidth: 820 }}>
-            {SITE.tagline}. Parse. Interview. Evaluate. Decide.
+            Parse. Interview. Evaluate. Decide.
           </div>
         </div>
         <div style={{ fontSize: 22, color: "#5B6570" }}>

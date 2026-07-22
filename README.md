@@ -26,6 +26,7 @@ Candidates apply through **Tamm Careers**. Recruiters review AI-generated insigh
 - [Product Tour](#product-tour)
 - [Why I built this](#why-i-built-this)
 - [Product Philosophy](#product-philosophy)
+- [Internationalization](#internationalization)
 - [User journeys](#user-journeys)
 - [Overview](#overview)
 - [Features](#features)
@@ -376,6 +377,117 @@ The goal is better hiring decisions — not blind automation.
 
 ---
 
+## Internationalization
+
+Foundry ships production-grade **English + Arabic** localization — not a translated skin, but a full bilingual product: RTL layout, locale-aware AI generation, and typed translation catalogs comparable to modern SaaS (Stripe, Vercel, Linear).
+
+| Locale | Language | Direction | Font | Default |
+| --- | --- | --- | --- | --- |
+| `en` | English | `ltr` | General Sans / Inter | Yes |
+| `ar` | العربية (Modern Standard Arabic) | `rtl` | IBM Plex Sans Arabic | No |
+
+### Localization architecture
+
+```text
+Language Switcher
+        ↓
+  Locale Provider   (locale, direction, setLocale, t, formatDate, formatNumber)
+        ↓
+Translation Registry (locales → domain message trees)
+        ↓
+   UI Components     (+ localized aria-*)
+        ↓
+    AI Context       { language, code, direction, preserveTechnicalTerms }
+        ↓
+   Prompt Builder     (system + locale instructions)
+        ↓
+       Gemini
+        ↓
+Structured Output (Zod) → CandidateSession / panels
+```
+
+URLs never change (no `/en` / `/ar` segments) — the entire tree above runs client-side off a single `useLocale()` hook, so any component can render fully localized UI without prop drilling.
+
+### Switching, persistence & RTL
+
+- A premium **globe dropdown** (`src/components/i18n/language-switcher.tsx`) lives in both the Careers and Foundry navbars — keyboard operable (`↑`/`↓`/`Home`/`End`/`Esc`), `aria-haspopup`, `aria-expanded`, and localized labels.
+- Locale resolution follows a deterministic **precedence**: `localStorage` (`foundry.locale`) → browser `navigator.languages` (`ar*` → `ar`) → default `en`. Preference persists across reloads and survives browser back/forward.
+- Switching to Arabic flips `<html lang="ar" dir="rtl">`; the whole UI mirrors via **CSS logical properties** (`ms-*`/`me-*`/`ps-*`/`pe-*`/`start-*`/`end-*` instead of physical `ml-*`/`mr-*`/`left-*`/`right-*`), so navs, cards, steppers, and forms read naturally right-to-left instead of being globally mirrored.
+- Directional chrome (arrows, chevrons) flips with the locale; decorative illustrations do not mirror.
+
+### Accessibility
+
+- `<html lang>` / `<html dir>` sync on every locale change (hydration-safe — server renders `en`, client syncs post-mount, next-themes-style pattern).
+- Screen-reader-facing copy — `aria-label`, `aria-expanded`, `aria-current`, `aria-live` regions — is localized through the same `t` dictionary as visible text, not hardcoded English.
+- Focus rings, keyboard navigation, and `prefers-reduced-motion` behavior are unaffected by locale.
+
+### Typography & formatting
+
+- Arabic loads **IBM Plex Sans Arabic** via `next/font/google` (Arabic subset), mapped through `--font-heading` / `--font-body` CSS variables under `html[lang="ar"]` — English keeps General Sans / Inter. Geist Mono stays fixed for code/IDs in both locales.
+- All locale-visible numbers, dates, and percentages route through `src/lib/utils/format.ts` (`formatDate`, `formatNumber`, `formatPercent`) backed by `Intl` — never ad-hoc `toLocaleString()`. Example: ATS `95%` renders as `٩٥٪` in Arabic; `1,250` renders as `١٬٢٥٠`.
+
+### Locale-aware AI, not post-hoc translation
+
+Foundry's AI pipeline treats language as a **first-class prompt input**, not a translation step bolted onto the output:
+
+```text
+UI → AIContext → PromptBuilder → Gemini → Zod parser → Structured output
+```
+
+- Every `/api/ai/*` request carries an explicit `AILocaleContext` (`{ language, code, direction, preserveTechnicalTerms }`) — the server never infers locale from ambient state.
+- `PromptBuilder` appends system instructions per locale: Arabic responses use Modern Standard Arabic with a professional recruiter tone, while **technical terms stay in English** (Python, React, TypeScript, Next.js, FastAPI, PostgreSQL, Docker, Kubernetes, Gemini, LLM, RAG, ATS, API, JWT, OAuth, …).
+- Existing / cached analyses are **never silently rewritten** when a recruiter switches the UI language. Each `CandidateSession` persists the `analysisLanguage` it was generated in; when it differs from the active locale, the dashboard shows a banner (*"Generated in English"* / *"تم إنشاؤه باللغة الإنجليزية"*) with an explicit **Regenerate in current language** action that re-runs the live pipeline — no auto-translation, no silent rewrites.
+
+### Extensibility & translation integrity
+
+- Adding a language means three things: new `src/lib/translations/<code>/*.ts` domain files, one entry in the `locales` registry (`src/lib/i18n/locale.ts`), and it appears automatically in the switcher — zero component branching on language codes.
+- Translations use **strongly-typed nested access** (`t.careers.hero.title`, `t.validation.emailInvalid`) instead of stringly keys. English is the source of truth: the `Messages` type is inferred from the English tree, and Arabic must satisfy it — `npm run typecheck` (and CI) fails the build if a locale is missing a key, catching drift before it ships.
+- **Future work:** v1 intentionally uses simple `{name}` placeholder interpolation. If additional locales need complex pluralization, the formatting layer can evolve to ICU-style message formatting without changing the `useLocale()` / `t` API surface that components already depend on.
+
+### Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/i18n-careers-en.png" alt="Tamm Careers open roles page in English (LTR)" width="900"/>
+</p>
+
+<p align="center"><em>Careers — English, left-to-right.</em></p>
+
+<p align="center">
+  <img src="docs/screenshots/i18n-careers-ar.png" alt="Tamm Careers open roles page in Arabic with RTL layout" width="900"/>
+</p>
+
+<p align="center"><em>Careers — العربية, fully mirrored RTL layout with IBM Plex Sans Arabic.</em></p>
+
+<p align="center">
+  <img src="docs/screenshots/i18n-recruiter-en.png" alt="Foundry recruiter dashboard in English" width="900"/>
+</p>
+
+<p align="center"><em>Foundry recruiter dashboard — English chrome, metrics, and hiring report.</em></p>
+
+<p align="center">
+  <img src="docs/screenshots/i18n-recruiter-ar.png" alt="Foundry recruiter dashboard in Arabic with RTL layout and a Regenerate in current language banner" width="900"/>
+</p>
+
+<p align="center"><em>Foundry recruiter dashboard — العربية, RTL metrics and hiring report, with the "Regenerate in current language" banner for analyses generated in a different locale.</em></p>
+
+Regenerate (app must be running):
+
+```bash
+BASE_URL=http://localhost:8600 node docs/scripts/capture-i18n-screenshots.mjs
+```
+
+### Why this matters (portfolio value)
+
+- **Production i18n architecture** — typed translation registry, single `useLocale()` hook, zero `if (language === "ar")` branching in components.
+- **Real RTL engineering** — logical CSS properties audited across nav, forms, steppers, and charts, not a blanket `dir="rtl"` mirror.
+- **Locale-aware AI, not translation theater** — prompt engineering per locale, explicit request-scoped `AILocaleContext`, and an `analysisLanguage` + regenerate model that avoids silently rewriting historical AI output.
+- **Locale-correct formatting** — dates, numbers, and percentages through `Intl`, including Arabic-Indic digit rendering.
+- **Accessibility-first** — `lang`/`dir` sync and localized ARIA, not just visual translation.
+- **Client-side persistence** — deterministic `localStorage → browser language → default` precedence with SSR-safe hydration.
+- **Built to extend** — new languages are additive (translation files + one registry entry); translation drift is caught by `npm run typecheck`, not by manual QA.
+
+---
+
 ## User journeys
 
 ### Candidate journey
@@ -498,7 +610,7 @@ Demo persistence is **in-memory** (no auth, no database). Swapping to PostgreSQL
 
 ## Screenshots
 
-Product surfaces are documented in **[Product Tour](#product-tour)** (`docs/screenshots/`).
+Product surfaces are documented in **[Product Tour](#product-tour)** (`docs/screenshots/`). Bilingual EN/AR captures are documented in **[Internationalization](#internationalization)**.
 
 Legacy hero asset: [`docs/images/dashboard.png`](./docs/images/dashboard.png).
 
@@ -506,6 +618,7 @@ Regenerate captures (app must be running):
 
 ```bash
 BASE_URL=http://localhost:8600 node docs/scripts/capture-screenshots.mjs
+BASE_URL=http://localhost:8600 node docs/scripts/capture-i18n-screenshots.mjs
 ```
 
 ---

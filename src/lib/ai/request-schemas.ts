@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { aiLocaleContextSchema, buildAILocaleContext } from "@/lib/i18n/ai-locale";
 import {
   answerEvaluationSchema,
   parsedResumeSchema,
@@ -6,25 +7,37 @@ import {
   technicalQuestionSchema,
 } from "./schemas";
 
+/**
+ * Optional on the wire; defaults to English so existing callers that omit
+ * `locale` keep working unchanged.
+ */
+const localeRequestSchema = aiLocaleContextSchema
+  .optional()
+  .default(() => buildAILocaleContext("en"));
+
 export const parseResumeRequestSchema = z.object({
   resumeText: z.string().min(1, "resumeText is required"),
   linkedInUrl: z.string().url().optional().nullable(),
+  locale: localeRequestSchema,
 });
 
 export const analyzeResumeRequestSchema = z.object({
   resume: parsedResumeSchema,
   linkedInUrl: z.string().url().optional().nullable(),
+  locale: localeRequestSchema,
 });
 
 export const fitRationaleRequestSchema = z.object({
   resume: parsedResumeSchema,
   analysis: resumeAnalysisSchema,
   stream: z.boolean().optional().default(false),
+  locale: localeRequestSchema,
 });
 
 export const questionsRequestSchema = z.object({
   resume: parsedResumeSchema,
   analysis: resumeAnalysisSchema.optional().nullable(),
+  locale: localeRequestSchema,
 });
 
 export const evaluateAnswersRequestSchema = z.object({
@@ -38,6 +51,7 @@ export const evaluateAnswersRequestSchema = z.object({
       })
     )
     .min(1),
+  locale: localeRequestSchema,
 });
 
 export type ParseResumeRequest = z.infer<typeof parseResumeRequestSchema>;

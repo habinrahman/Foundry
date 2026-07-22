@@ -1,0 +1,33 @@
+export const common = {
+  light: "Light",
+  dark: "Dark",
+  switchToLightMode: "Switch to light mode",
+  switchToDarkMode: "Switch to dark mode",
+  back: "Back",
+  continue: "Continue",
+  edit: "Edit",
+  close: "Close",
+  search: "Search",
+  refresh: "Refresh",
+  reset: "Reset",
+  reload: "Reload",
+  noMatches: "No matches",
+  unknownError: "Something went wrong.",
+  contact: "Contact",
+  privacy: "Privacy",
+  accessibility: "Accessibility",
+  emptyValue: "—",
+  justNow: "Just now",
+  minutesAgo: "{minutes} min ago",
+  hoursAgo: "{hours}h ago",
+  daysAgo: "{days}d ago",
+  resumeDropzone: {
+    title: "Drop your resume",
+    description:
+      "PDF or DOCX · up to 8MB. Text is extracted server-side and sent to Gemini for live analysis.",
+    browse: "Browse files",
+    selectedPrefix: "Selected",
+    ariaLabel:
+      "Upload resume. Drag and drop a PDF or DOCX file, or press Enter to browse.",
+  },
+};

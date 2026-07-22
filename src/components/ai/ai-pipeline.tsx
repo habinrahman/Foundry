@@ -2,8 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Check } from "lucide-react";
-import { AI_PIPELINE_STAGES } from "@/hooks/use-live-ai-pipeline";
 import { usePrefersReducedMotion } from "@/hooks";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 import { ProgressBar } from "@/components/motion/progress";
 
@@ -19,6 +19,8 @@ export function AiPipeline({
   className?: string;
 }) {
   const reduced = usePrefersReducedMotion();
+  const { t } = useLocale();
+  const stages = t.ai.stages.livePipeline;
 
   return (
     <div
@@ -29,14 +31,14 @@ export function AiPipeline({
       role="status"
       aria-live="polite"
       aria-busy={!done}
-      aria-label={done ? "Analysis complete" : AI_PIPELINE_STAGES[stageIndex]}
+      aria-label={done ? t.ai.pipeline.analysisComplete : stages[stageIndex]}
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <ThinkingOrb active={!done} />
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
-              Foundry
+              {t.ai.pipeline.foundryLabel}
             </p>
             <AnimatePresence mode="wait">
               <motion.p
@@ -47,7 +49,7 @@ export function AiPipeline({
                 transition={{ duration: 0.25 }}
                 className="text-sm font-medium text-[var(--foreground)]"
               >
-                {done ? "Ready for your review" : AI_PIPELINE_STAGES[stageIndex]}
+                {done ? t.ai.pipeline.readyForReview : stages[stageIndex]}
               </motion.p>
             </AnimatePresence>
           </div>
@@ -57,10 +59,10 @@ export function AiPipeline({
         </span>
       </div>
 
-      <ProgressBar value={progress} label="AI analysis progress" />
+      <ProgressBar value={progress} label={t.ai.pipeline.progressLabel} />
 
       <ol className="mt-5 space-y-2">
-        {AI_PIPELINE_STAGES.map((stage, index) => {
+        {stages.map((stage, index) => {
           const complete = done || index < stageIndex;
           const current = !done && index === stageIndex;
           return (

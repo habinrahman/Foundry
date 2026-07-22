@@ -1,4 +1,8 @@
-export { TALENT_AI_SYSTEM, formatRoleBrief } from "./system";
+export {
+  TALENT_AI_SYSTEM,
+  buildTalentAiSystem,
+  formatRoleBrief,
+} from "./system";
 export { buildParseResumeMessages } from "./parse-resume";
 export { buildAnalyzeResumeMessages } from "./analyze-resume";
 export {

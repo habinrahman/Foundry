@@ -4,6 +4,7 @@ import { memo } from "react";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { AnimatedScore } from "@/components/motion/animated-score";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 
 export const OverviewCard = memo(function OverviewCard({
@@ -37,6 +38,8 @@ export const OverviewCard = memo(function OverviewCard({
     amber: "var(--warning)",
   }[accent];
 
+  const { formatNumber } = useLocale();
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 10 }}
@@ -62,7 +65,9 @@ export const OverviewCard = memo(function OverviewCard({
           value={value}
           className="font-heading text-3xl font-semibold tracking-tight"
         />
-        <span className="mb-1 text-xs text-[var(--muted)]">/ 100</span>
+        <span className="mb-1 text-xs text-[var(--muted)]">
+          / {formatNumber(100)}
+        </span>
       </div>
       <div
         className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--border)]"

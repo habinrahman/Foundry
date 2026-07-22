@@ -142,30 +142,54 @@ Sections (in order):
 
 **Performance:** Lazy-load heavy below-fold sections (`next/dynamic` or deferred client islands). Prefer CSS for ambient motion when possible. Reserve fixed aspect ratios for hero media to avoid CLS. Semantic HTML landmarks (`header`, `main`, `section`, `footer`, `nav`).
 
+### Inspiration vs originality (important)
+
+Real-world hiring often uses a basic Google Form (name, email, WhatsApp phone, role, country, fit question, resume). This project is a **premium alternative**, not a recreation.
+
+**Collect the same essential information** so the demo is realistic.  
+**Do not copy** any real employer’s exact form wording, layout, branding, field labels, or visual design. Write original copy and craft an original UI.
+
+### Role catalog
+
+Seed `src/data/careers/roles.ts` with these open engineering roles (original descriptions/requirements—titles only are shared with common industry naming):
+
+| Slug | Title |
+|------|--------|
+| `senior-backend-engineer-nodejs` | Senior Backend Engineer (Node.js) |
+| `founding-ai-engineer` | Founding AI Engineer |
+| `ai-research-engineer` | AI Research Engineer |
+| `generative-ai-engineer` | Generative AI Engineer |
+| `ai-product-engineer` | AI Product Engineer |
+| `engineering-lead` | Engineering Lead |
+
+All roles appear on `/careers` and support `/careers/[slug]` + `/apply?role=<slug>`. **AI Product Engineer** is the flagship detail page (richest content); other roles get complete, credible detail pages without blocking polish on the flagship.
+
 ### `/careers`
 
-Engineering opportunities listing from static job catalog. Reuse `JobCard`. Empty state if catalog empty (should not happen with seeded role).
+Engineering opportunities listing from the static catalog. Reuse `JobCard`.
 
 ### `/careers/[slug]`
 
-Role details. First role: **AI Product Engineer** (`ai-product-engineer`): Remote, Full-time, experience required, description, responsibilities, requirements. Apply CTA → `/apply?role=ai-product-engineer`. Unknown slug → `notFound()`.
+Role details: location (e.g. Remote), employment type (Full-time), experience signal, original overview, responsibilities, requirements. Apply CTA → `/apply?role=<slug>`. Unknown slug → `notFound()`.
 
 ### `/apply`
 
-Premium multi-step form (client component):
+Premium multi-step form (client component). Role is **pre-selected** when arriving from a job page (`?role=`); still changeable via an elegant select (not a Google Forms dropdown clone).
 
 | Step | Fields |
 |------|--------|
-| 1 · Role & basics | Role (from `?role=` / select), full name, email, phone (optional) |
-| 2 · Profile | LinkedIn, portfolio/GitHub (optional), work preference, notes |
-| 3 · Resume | Upload via existing `ResumeDropzone`; show filename; attempt `/api/ai/extract-text` |
-| 4 · Review & submit | Summary + submit |
+| 1 · Personal | Full name, email, phone (WhatsApp-capable), country of residence |
+| 2 · Position | Role (pre-selected), years of experience, current company (optional), current position (optional) |
+| 3 · Professional profile | LinkedIn, GitHub (optional), portfolio (optional) |
+| 4 · Resume | Drag-and-drop via `ResumeDropzone`; PDF/DOCX validation; upload/extract progress; attempt `/api/ai/extract-text` |
+| 5 · Questions | Why are you interested in this role? · Why are you a strong fit? · Anything else you'd like us to know? (optional) |
+| 6 · Review | Summary of all answers → Submit |
 
 **Submit:** `POST /api/applications` → on success navigate to `/application/success?applicationId=<id>`.
 
 **Extraction resilience:** If text extraction fails, still allow submit with resume metadata and `resumeText: null`. Recruiter path will use demo fallback for analysis.
 
-**Validation:** Client UX validation + server Zod (source of truth).
+**Validation:** Client UX validation + server Zod (source of truth). Phone labeled for WhatsApp contact without requiring WhatsApp API integration.
 
 ### `/application/success`
 
@@ -231,13 +255,24 @@ interface Application {
   createdAt: string;          // ISO
   roleSlug: string;
   roleTitle: string;
+  // Personal
   fullName: string;
   email: string;
-  phone?: string | null;
-  linkedInUrl?: string | null;
+  phone: string;              // WhatsApp-capable contact number
+  countryOfResidence: string;
+  // Position
+  yearsOfExperience: string;  // e.g. "0-1" | "1-3" | "3-5" | "5-8" | "8+"
+  currentCompany?: string | null;
+  currentPosition?: string | null;
+  // Profile
+  linkedInUrl: string;
+  githubUrl?: string | null;
   portfolioUrl?: string | null;
-  workPreference?: string | null;
-  notes?: string | null;
+  // Questions (original wording in UI; stored as answers)
+  interestReason: string;
+  strongFitReason: string;
+  additionalNotes?: string | null;
+  // Resume
   resumeFileName?: string | null;
   resumeMimeType?: string | null;
   resumeSizeBytes?: number | null;
@@ -437,15 +472,16 @@ Swap rules:
 ## 15. Acceptance criteria
 
 1. `/` is a polished Tamm Careers landing with all required sections; original design; responsive; accessible; light + dark.  
-2. `/careers` and `/careers/ai-product-engineer` work; Apply routes to `/apply?role=…`.  
-3. `/apply` multi-step validates, uploads resume, extracts text when possible, POSTs application, redirects to success with id.  
-4. `/application/success` ends the candidate journey with approved copy; CTAs only to careers.  
-5. Public layout never shows Foundry nav, command palette, or recruiter links.  
-6. Foundry Talk/Hire/AI/export behavior preserved; Applications list appears on `/recruiter`.  
-7. Selecting an application hydrates the existing dashboard; live AI when `resumeText` exists; labeled demo fallback otherwise.  
-8. Storage behind `ApplicationRepository`; memory singleton only for now.  
-9. Root no longer wraps public routes in Foundry `AppProviders` shell.  
-10. `npm run typecheck` and `npm run build` pass after each implementation phase.  
+2. `/careers` lists all six seeded roles; `/careers/[slug]` works for each; Apply routes to `/apply?role=…`.  
+3. `/apply` multi-step collects personal → position → profile → resume → questions → review; validates; extracts text when possible; POSTs; redirects to success with id.  
+4. Apply UI/copy is original—not a Google Form clone or a reproduction of any employer’s form.  
+5. `/application/success` ends the candidate journey with approved copy; CTAs only to careers.  
+6. Public layout never shows Foundry nav, command palette, or recruiter links.  
+7. Foundry Talk/Hire/AI/export behavior preserved; Applications list appears on `/recruiter`.  
+8. Selecting an application hydrates the existing dashboard; live AI when `resumeText` exists; labeled demo fallback otherwise.  
+9. Storage behind `ApplicationRepository`; memory singleton only for now.  
+10. Root no longer wraps public routes in Foundry `AppProviders` shell.  
+11. `npm run typecheck` and `npm run build` pass after each implementation phase.  
 
 ---
 
@@ -485,5 +521,7 @@ Each phase must preserve existing Foundry functionality. Refactor only where req
 | Regression risk | Layout move could break Foundry | Phase 1 verification gate; preserve Talk/Hire/AI/export (§16) |
 
 **Ambiguity closed:** `/candidate` is Foundry-only demo Talk—not hiring. Success never links there.
+
+**Form realism (2026-07-22 addendum):** Apply steps mirror essential info from a typical careers Google Form (identity, role, country, fit narrative, resume) but use a premium multi-step UX and **original** copy/UI. Six engineering roles seeded in the catalog.
 
 **No TBD placeholders** remain for this scope.

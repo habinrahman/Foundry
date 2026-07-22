@@ -15,12 +15,12 @@ export function OrbitIllustration({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="foundryGlow" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#2DD4BF" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#60A5FA" stopOpacity="0.7" />
+          <stop offset="0%" stopColor="var(--chart-1)" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="var(--chart-2)" stopOpacity="0.7" />
         </linearGradient>
         <radialGradient id="core" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#2DD4BF" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="#2DD4BF" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--chart-1)" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="var(--chart-1)" stopOpacity="0" />
         </radialGradient>
       </defs>
       <rect width="480" height="360" rx="28" fill="url(#core)" opacity="0.35" />
@@ -43,12 +43,12 @@ export function OrbitIllustration({ className }: { className?: string }) {
         opacity="0.35"
         transform="rotate(28 240 180)"
       />
-      <circle cx="240" cy="180" r="18" fill="#2DD4BF" opacity="0.9" />
-      <circle cx="240" cy="180" r="8" fill="#E8EEF4" opacity="0.95" />
-      <circle cx="360" cy="140" r="7" fill="#60A5FA" />
-      <circle cx="150" cy="120" r="5" fill="#22D3EE" />
-      <circle cx="300" cy="250" r="6" fill="#94A3B8" />
-      <circle cx="120" cy="220" r="4" fill="#2DD4BF" opacity="0.7" />
+      <circle cx="240" cy="180" r="18" fill="var(--chart-1)" opacity="0.9" />
+      <circle cx="240" cy="180" r="8" fill="var(--highlight)" opacity="0.95" />
+      <circle cx="360" cy="140" r="7" fill="var(--chart-2)" />
+      <circle cx="150" cy="120" r="5" fill="var(--chart-3)" />
+      <circle cx="300" cy="250" r="6" fill="var(--chart-4)" />
+      <circle cx="120" cy="220" r="4" fill="var(--chart-1)" opacity="0.7" />
       <path
         d="M240 180 L360 140 M240 180 L150 120 M240 180 L300 250 M240 180 L120 220"
         stroke="url(#foundryGlow)"
@@ -57,7 +57,7 @@ export function OrbitIllustration({ className }: { className?: string }) {
       />
       <path
         d="M70 290 C140 250, 200 310, 260 270 C320 230, 380 280, 420 250"
-        stroke="#2DD4BF"
+        stroke="var(--chart-1)"
         strokeWidth="2"
         strokeLinecap="round"
         opacity="0.45"

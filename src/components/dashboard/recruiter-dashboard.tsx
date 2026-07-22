@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { memo } from "react";
+import { memo, useCallback, useState } from "react";
 import {
   Activity,
   Brain,
@@ -9,6 +9,7 @@ import {
   MessageSquareText,
   Sparkles,
 } from "lucide-react";
+import { ApplicationsList } from "@/components/dashboard/applications-list";
 import { OverviewCard } from "@/components/dashboard/overview-cards";
 import { SkillMatrix } from "@/components/dashboard/skill-matrix";
 import { CandidateTimeline } from "@/components/dashboard/timeline";
@@ -22,9 +23,12 @@ import { ExportBar } from "@/components/dashboard/export-bar";
 import { RecommendationBadge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCandidateStore } from "@/store/candidate-store";
-import { useCommandPalette } from "@/hooks";
+import { useCommandPalette, useLiveAiPipeline } from "@/hooks";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion/fade-in";
+import { DEMO_CANDIDATE } from "@/data/demo-candidate";
+import type { Application } from "@/lib/applications/types";
+import type { CandidateSession } from "@/types/dashboard";
 
 const CandidateRadarChart = dynamic(
   () =>
@@ -37,11 +41,83 @@ const CandidateRadarChart = dynamic(
   }
 );
 
+function seedFromApplication(app: Application): CandidateSession {
+  return {
+    ...DEMO_CANDIDATE,
+    id: `app_${app.id}`,
+    roleTitle: app.role.title,
+    updatedAt: new Date().toISOString(),
+    resume: {
+      ...DEMO_CANDIDATE.resume,
+      name: app.personal.fullName,
+      email: app.personal.email,
+      phone: app.personal.phone,
+    },
+  };
+}
+
 export const RecruiterDashboard = memo(function RecruiterDashboard() {
-  const { candidate } = useCandidateStore();
+  const { candidate, setCandidate } = useCandidateStore();
   const { setOpen } = useCommandPalette();
   const { scores, resume, analysis, fit, questions, answers, evaluation } =
     candidate;
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [analyzedIds, setAnalyzedIds] = useState<Set<string>>(() => new Set());
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [hydrateNotice, setHydrateNotice] = useState<string | null>(null);
+  const [hydrateError, setHydrateError] = useState<string | null>(null);
+
+  const pipeline = useLiveAiPipeline({
+    onComplete: (session) => setCandidate(session),
+  });
+
+  const onSelectApplication = useCallback(
+    async (app: Application) => {
+      setSelectedId(app.id);
+      setHydrateError(null);
+      setBusyId(app.id);
+
+      try {
+        if (app.resume.text?.trim()) {
+          setHydrateNotice("Running AI analysis on submitted resume…");
+          const session = await pipeline.run({
+            resumeText: app.resume.text,
+            linkedInUrl: app.professional.linkedInUrl,
+          });
+          setCandidate({
+            ...session,
+            roleTitle: app.role.title,
+            resume: {
+              ...session.resume,
+              name: app.personal.fullName || session.resume.name,
+              email: app.personal.email || session.resume.email,
+              phone: app.personal.phone || session.resume.phone,
+            },
+            updatedAt: new Date().toISOString(),
+          });
+          setAnalyzedIds((prev) => new Set(prev).add(app.id));
+          setHydrateNotice(null);
+        } else {
+          setCandidate(seedFromApplication(app));
+          setHydrateNotice(
+            "Showing representative demo analysis — resume text unavailable for this application."
+          );
+        }
+      } catch (err) {
+        setHydrateError(
+          err instanceof Error ? err.message : "Unable to analyze application."
+        );
+        setCandidate(seedFromApplication(app));
+        setHydrateNotice(
+          "Live analysis failed — showing representative demo insights for this candidate."
+        );
+      } finally {
+        setBusyId(null);
+      }
+    },
+    [pipeline.run, setCandidate]
+  );
 
   const insights = [
     fit.matchPoints[0],
@@ -51,6 +127,28 @@ export const RecruiterDashboard = memo(function RecruiterDashboard() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+      <ApplicationsList
+        selectedId={selectedId}
+        analyzedIds={analyzedIds}
+        onSelect={onSelectApplication}
+        busyId={busyId}
+      />
+
+      {hydrateNotice ? (
+        <p
+          className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--accent-soft)] px-4 py-3 text-sm"
+          role="status"
+        >
+          {hydrateNotice}
+          {pipeline.active ? ` ${pipeline.stageLabel}` : null}
+        </p>
+      ) : null}
+      {hydrateError ? (
+        <p className="mb-4 text-sm text-[var(--danger)]" role="alert">
+          {hydrateError}
+        </p>
+      ) : null}
+
       <header className="mb-8 flex flex-col gap-6 border-b border-[var(--border)] pb-7 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--accent)]">

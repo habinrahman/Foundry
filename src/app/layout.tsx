@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AppProviders } from "@/components/providers/app-providers";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { fontBody, fontVariables } from "@/lib/fonts";
@@ -17,9 +16,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={fontVariables}>
       <body className={`${fontBody.className} antialiased`}>
         <ThemeProvider>
-          <ErrorBoundary>
-            <AppProviders>{children}</AppProviders>
-          </ErrorBoundary>
+          <ErrorBoundary>{children}</ErrorBoundary>
         </ThemeProvider>
       </body>
     </html>

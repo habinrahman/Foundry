@@ -21,6 +21,7 @@ import {
   exportCandidateMarkdown,
   exportCandidatePdf,
 } from "@/lib/export/candidate-export";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 
 type CommandItem = {
@@ -37,6 +38,7 @@ export function CommandPalette() {
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
   const { candidate, resetToDemo } = useCandidateStore();
+  const { t } = useLocale();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,73 +47,76 @@ export function CommandPalette() {
     () => [
       {
         id: "candidate",
-        label: "Candidate upload",
+        label: t.foundry.commandPalette.items.candidateUpload,
         hint: "G U",
-        group: "Navigate",
+        group: t.foundry.commandPalette.groups.navigate,
         icon: FileUp,
         run: () => router.push("/candidate"),
       },
       {
         id: "recruiter",
-        label: "Recruiter dashboard",
+        label: t.foundry.commandPalette.items.recruiterDashboard,
         hint: "G D · G H",
-        group: "Navigate",
+        group: t.foundry.commandPalette.groups.navigate,
         icon: LayoutDashboard,
         run: () => router.push("/recruiter"),
       },
       {
         id: "theme",
-        label: resolvedTheme === "dark" ? "Switch to light" : "Switch to dark",
+        label:
+          resolvedTheme === "dark"
+            ? t.foundry.commandPalette.items.switchToLight
+            : t.foundry.commandPalette.items.switchToDark,
         hint: "T",
-        group: "Appearance",
+        group: t.foundry.commandPalette.groups.appearance,
         icon: resolvedTheme === "dark" ? Sun : Moon,
         run: () => setTheme(resolvedTheme === "dark" ? "light" : "dark"),
       },
       {
         id: "export-pdf",
-        label: "Export PDF",
-        group: "Export",
+        label: t.foundry.commandPalette.items.exportPdf,
+        group: t.foundry.commandPalette.groups.export,
         icon: Search,
         run: () => exportCandidatePdf(candidate),
       },
       {
         id: "export-md",
-        label: "Export Markdown",
-        group: "Export",
+        label: t.foundry.commandPalette.items.exportMarkdown,
+        group: t.foundry.commandPalette.groups.export,
         icon: Search,
         run: () => exportCandidateMarkdown(candidate),
       },
       {
         id: "export-json",
-        label: "Export JSON",
-        group: "Export",
+        label: t.foundry.commandPalette.items.exportJson,
+        group: t.foundry.commandPalette.groups.export,
         icon: Search,
         run: () => exportCandidateJson(candidate),
       },
       {
         id: "export-csv",
-        label: "Export CSV",
-        group: "Export",
+        label: t.foundry.commandPalette.items.exportCsv,
+        group: t.foundry.commandPalette.groups.export,
         icon: Search,
         run: () => exportCandidateCsv(candidate),
       },
       {
         id: "reset",
-        label: "Reset demo candidate",
-        group: "Session",
+        label: t.foundry.commandPalette.items.resetDemoCandidate,
+        group: t.foundry.commandPalette.groups.session,
         icon: RotateCcw,
         run: () => resetToDemo(),
       },
       {
         id: "shortcuts",
-        label: "Keyboard shortcuts",
+        label: t.foundry.commandPalette.items.keyboardShortcuts,
         hint: "?",
-        group: "Help",
+        group: t.foundry.commandPalette.groups.help,
         icon: Keyboard,
         run: () => router.push("/#shortcuts"),
       },
     ],
-    [candidate, resetToDemo, resolvedTheme, router, setTheme]
+    [candidate, resetToDemo, resolvedTheme, router, setTheme, t]
   );
 
   const filtered = useMemo(() => {
@@ -162,7 +167,7 @@ export function CommandPalette() {
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-label="Command palette"
+            aria-label={t.foundry.commandPalette.ariaLabel}
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
@@ -190,13 +195,13 @@ export function CommandPalette() {
                     setOpen(false);
                   }
                 }}
-                placeholder="Type a command or search…"
+                placeholder={t.foundry.commandPalette.placeholder}
                 className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-[var(--muted)]"
                 aria-autocomplete="list"
                 aria-controls="command-list"
               />
               <kbd className="hidden rounded border border-[var(--border)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--muted)] sm:inline">
-                esc
+                {t.foundry.commandPalette.escKey}
               </kbd>
             </div>
             <ul
@@ -206,7 +211,7 @@ export function CommandPalette() {
             >
               {filtered.length === 0 ? (
                 <li className="px-3 py-6 text-center text-sm text-[var(--muted)]">
-                  No matches
+                  {t.foundry.commandPalette.noMatches}
                 </li>
               ) : (
                 filtered.map((item, index) => (

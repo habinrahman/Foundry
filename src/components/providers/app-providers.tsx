@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { useMemo, useRef } from "react";
 import { FileUp, LayoutDashboard, Search } from "lucide-react";
 import { CommandPalette } from "@/components/command/command-palette";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,7 @@ import {
   useCommandPalette,
   useKeyboardShortcuts,
 } from "@/hooks";
+import { useLocale } from "@/lib/i18n/hooks";
 import { APP_NAME } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { CandidateStoreProvider } from "@/store/candidate-store";
@@ -22,6 +24,7 @@ function ShellChrome({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { setOpen, toggle, open } = useCommandPalette();
   const { setTheme, resolvedTheme } = useTheme();
+  const { t } = useLocale();
   const chordRef = useRef<string | null>(null);
 
   const bindings = useMemo(
@@ -73,17 +76,17 @@ function ShellChrome({ children }: { children: React.ReactNode }) {
   useKeyboardShortcuts(bindings);
 
   const nav = [
-    { href: "/candidate", label: "Talk", icon: FileUp },
-    { href: "/recruiter", label: "Hire", icon: LayoutDashboard },
+    { href: "/candidate", label: t.navigation.talk, icon: FileUp },
+    { href: "/recruiter", label: t.navigation.hire, icon: LayoutDashboard },
   ] as const;
 
   return (
     <>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-[var(--accent)] focus:px-3 focus:py-2 focus:text-[var(--accent-foreground)]"
+        className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-[var(--accent)] focus:px-3 focus:py-2 focus:text-[var(--accent-foreground)]"
       >
-        Skip to content
+        {t.foundry.shell.skipToContent}
       </a>
 
       <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_78%,transparent)] backdrop-blur-xl">
@@ -95,7 +98,10 @@ function ShellChrome({ children }: { children: React.ReactNode }) {
             >
               {APP_NAME}
             </Link>
-            <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
+            <nav
+              aria-label={t.navigation.ariaLabels.primaryNav}
+              className="hidden items-center gap-1 md:flex"
+            >
               {nav.map((item) => (
                 <Link
                   key={item.href}
@@ -120,10 +126,10 @@ function ShellChrome({ children }: { children: React.ReactNode }) {
               className="hidden sm:inline-flex"
               onClick={() => setOpen(true)}
               aria-keyshortcuts="Meta+K Control+K"
-              aria-label="Open command palette"
+              aria-label={t.foundry.shell.openCommandPalette}
             >
               <Search className="h-3.5 w-3.5 text-[var(--muted)]" aria-hidden />
-              <span className="text-[var(--muted)]">Search</span>
+              <span className="text-[var(--muted)]">{t.foundry.shell.search}</span>
               <kbd className="rounded border border-[var(--border)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--muted)]">
                 ⌘K
               </kbd>
@@ -133,10 +139,11 @@ function ShellChrome({ children }: { children: React.ReactNode }) {
               size="sm"
               className="sm:hidden"
               onClick={() => setOpen(true)}
-              aria-label="Open command palette"
+              aria-label={t.foundry.shell.openCommandPalette}
             >
               <Search className="h-4 w-4" />
             </Button>
+            <LanguageSwitcher />
             <ThemeToggle />
           </div>
         </div>
@@ -147,7 +154,7 @@ function ShellChrome({ children }: { children: React.ReactNode }) {
       </main>
 
       <nav
-        aria-label="Mobile"
+        aria-label={t.navigation.ariaLabels.mobileNav}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_88%,transparent)] backdrop-blur-xl md:hidden"
       >
         <ul className="mx-auto grid max-w-lg grid-cols-2 px-2 py-2">

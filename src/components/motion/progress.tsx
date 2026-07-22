@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useLocale } from "@/lib/i18n/hooks";
 import { cn } from "@/lib/utils";
 import { usePrefersReducedMotion } from "@/hooks";
 
@@ -51,16 +52,18 @@ export function ProgressRing({
   label?: string;
 }) {
   const reduced = usePrefersReducedMotion();
+  const { formatNumber, formatPercent } = useLocale();
   const clamped = Math.min(100, Math.max(0, value));
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (clamped / 100) * circumference;
+  const rounded = Math.round(clamped);
 
   return (
     <div
       className={cn("relative inline-flex", className)}
       role="img"
-      aria-label={label ?? `Progress ${Math.round(clamped)} percent`}
+      aria-label={label ?? formatPercent(rounded)}
     >
       <svg width={size} height={size} className="-rotate-90">
         <circle
@@ -86,7 +89,7 @@ export function ProgressRing({
         />
       </svg>
       <span className="absolute inset-0 flex items-center justify-center font-mono text-xs tabular-nums">
-        {Math.round(clamped)}
+        {formatNumber(rounded)}
       </span>
     </div>
   );

@@ -4,22 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/lib/i18n/hooks";
 import { CAREERS_NAME, CAREERS_NAV } from "@/lib/careers-site";
 import { cn } from "@/lib/utils";
 
 export function CareersShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { t } = useLocale();
 
   return (
     <>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-[var(--accent)] focus:px-3 focus:py-2 focus:text-[var(--accent-foreground)]"
+        className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-[var(--accent)] focus:px-3 focus:py-2 focus:text-[var(--accent-foreground)]"
       >
-        Skip to content
+        {t.navigation.skipToContent}
       </a>
 
       <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_78%,transparent)] backdrop-blur-xl">
@@ -31,7 +34,10 @@ export function CareersShell({ children }: { children: React.ReactNode }) {
             >
               {CAREERS_NAME}
             </Link>
-            <nav aria-label="Careers" className="hidden items-center gap-1 md:flex">
+            <nav
+              aria-label={t.navigation.ariaLabels.careersNav}
+              className="hidden items-center gap-1 md:flex"
+            >
               {CAREERS_NAV.map((item) => {
                 const active =
                   item.href === "/careers"
@@ -52,17 +58,18 @@ export function CareersShell({ children }: { children: React.ReactNode }) {
                     )}
                     aria-current={active ? "page" : undefined}
                   >
-                    {item.label}
+                    {t.navigation[item.labelKey]}
                   </Link>
                 );
               })}
             </nav>
           </div>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher className="hidden sm:inline-flex" />
             <ThemeToggle className="hidden sm:inline-flex" />
             <Link href="/apply" className="hidden sm:block">
               <Button variant="primary" size="sm" className="rounded-full px-4">
-                Apply
+                {t.navigation.apply}
               </Button>
             </Link>
             <Button
@@ -71,7 +78,7 @@ export function CareersShell({ children }: { children: React.ReactNode }) {
               className="md:hidden"
               aria-expanded={open}
               aria-controls="careers-mobile-nav"
-              aria-label={open ? "Close menu" : "Open menu"}
+              aria-label={open ? t.navigation.closeMenu : t.navigation.openMenu}
               onClick={() => setOpen((v) => !v)}
             >
               {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -81,7 +88,7 @@ export function CareersShell({ children }: { children: React.ReactNode }) {
         {open ? (
           <nav
             id="careers-mobile-nav"
-            aria-label="Careers mobile"
+            aria-label={t.navigation.ariaLabels.careersMobileNav}
             className="border-t border-[var(--border)] px-4 py-3 md:hidden"
           >
             <ul className="flex flex-col gap-1">
@@ -92,10 +99,13 @@ export function CareersShell({ children }: { children: React.ReactNode }) {
                     className="block rounded-lg px-3 py-2.5 text-sm text-[var(--foreground)] hover:bg-[var(--surface)]"
                     onClick={() => setOpen(false)}
                   >
-                    {item.label}
+                    {t.navigation[item.labelKey]}
                   </Link>
                 </li>
               ))}
+              <li className="pt-2">
+                <LanguageSwitcher className="flex w-full justify-center [&>button]:w-full" />
+              </li>
               <li className="pt-2">
                 <ThemeToggle className="w-full justify-center" />
               </li>

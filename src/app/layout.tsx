@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { fontBody, fontVariables } from "@/lib/fonts";
+import { LocaleProvider } from "@/lib/i18n/provider";
 import { rootMetadata } from "@/lib/seo";
 import "./globals.css";
 
@@ -16,7 +17,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={fontVariables}>
       <body className={`${fontBody.className} antialiased`}>
         <ThemeProvider>
-          <ErrorBoundary>{children}</ErrorBoundary>
+          <LocaleProvider>
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

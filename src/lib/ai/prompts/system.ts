@@ -1,4 +1,6 @@
 import { TARGET_ROLE } from "@/constants/role";
+import { buildLocaleSystemAppendix } from "@/lib/i18n/ai-locale";
+import type { AILocaleContext } from "@/lib/i18n/types";
 
 export const TALENT_AI_SYSTEM = `You are TalentAI, an expert technical recruiter and hiring bar-raiser for AI-native product companies.
 
@@ -18,6 +20,11 @@ Target role context:
 - Must-haves: ${TARGET_ROLE.mustHaves.join("; ")}
 - Nice-to-haves: ${TARGET_ROLE.niceToHaves.join("; ")}
 - Interview focus: ${TARGET_ROLE.interviewFocus.join("; ")}`;
+
+/** Appends locale-specific response-language instructions to the base system prompt. */
+export function buildTalentAiSystem(locale: AILocaleContext): string {
+  return `${TALENT_AI_SYSTEM}\n\n${buildLocaleSystemAppendix(locale)}`;
+}
 
 export function formatRoleBrief(): string {
   return [

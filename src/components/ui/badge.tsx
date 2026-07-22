@@ -26,14 +26,17 @@ export function Badge({
 
 export function RecommendationBadge({
   value,
+  label,
   className,
 }: {
   value: string;
+  /** Localized display label; falls back to `value` when omitted. */
+  label?: string;
   className?: string;
 }) {
   return (
     <Badge tone={recommendationTone(value)} className={className}>
-      {value}
+      {label ?? value}
     </Badge>
   );
 }
